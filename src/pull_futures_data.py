@@ -26,7 +26,7 @@ def fetch_wrds_contract_info(product_contract_code, time_period='paper'):
         start_date = CURRENT_START_DATE
         end_date = CURRENT_END_DATE
     query = f"""
-    SELECT futcode, contrcode, contrname, startdate, lasttrddate
+    SELECT futcode, contrcode, contrname, contrdate, startdate, lasttrddate
     FROM tr_ds_fut.wrds_contract_info
     WHERE contrcode = {product_contract_code}
       AND startdate >= '{start_date}'
@@ -34,7 +34,7 @@ def fetch_wrds_contract_info(product_contract_code, time_period='paper'):
     """
     return db.raw_sql(query)
 
-def fetch_wrds_fut_contract(futcodes, time_period='paper'):
+def fetch_wrds_fut_contract(futcodes_contrdates, time_period='paper'):
     """
     Fetch daily settlement prices from wrds_fut_contract.
     """
@@ -47,12 +47,13 @@ def fetch_wrds_fut_contract(futcodes, time_period='paper'):
     query = f"""
     SELECT futcode, date_, settlement
     FROM tr_ds_fut.wrds_fut_contract
-    WHERE futcode IN {futcodes}
+    WHERE futcode IN {tuple(futcodes_contrdates.keys())}
       AND date_ >= '{start_date}'
       AND date_ <= '{end_date}'
     """
     df = db.raw_sql(query)
     df["date_"] = pd.to_datetime(df["date_"])
+    df["contrdate"] = df["futcode"].map(futcodes_contrdates)
     return df
 
 

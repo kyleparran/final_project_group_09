@@ -1,7 +1,7 @@
 import pandas as pd
 
 import pull_fred
-import pull_ofr_api_data
+import archive.pull_ofr_api_data as pull_ofr_api_data
 
 import os
 from pathlib import Path
