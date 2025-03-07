@@ -1,9 +1,9 @@
 from pull_futures_data import *
-
+"""
 def extract_prompt_and_12m_settlements(df_month):
-    """
-    Pick earliest row as prompt and last row as 12-month.
-    """
+    
+    #Pick earliest row as prompt and last row as 12-month.
+    
     df_month = df_month.sort_values(by="date_")
     prompt = df_month.iloc[0]
     last_12m = df_month.iloc[-1] if len(df_month) > 1 else None
@@ -11,6 +11,55 @@ def extract_prompt_and_12m_settlements(df_month):
         "prompt_settlement": prompt["settlement"],
         "contract_12m_settlement": last_12m["settlement"] if last_12m is not None else np.nan
     })
+    """
+# Parse the contrdate strings into a monthly Period (e.g. '03/03' -> 2003-03)
+def parse_contrdate(c):
+    c = c.replace('/', '')  # handle both 'MMYY' & 'MM/YY'
+    mm = int(c[:2])
+    yy = int(c[2:])
+    # crude century switch: assume YY<50 => 20xx, else 19xx
+    year = (2000 + yy) if yy < 50 else (1900 + yy)
+    return pd.Period(freq='M', year=year, month=mm)
+
+def extract_prompt_and_12m_settlements(monthly_df):
+    """
+    Expects:
+      monthly_df with columns:
+        date_      (the observation date, dtype=Timestamp)
+        settlement (float)
+        contrdate  (string in MMYY or MM/YY format, e.g. '0303','11/77')
+      The function returns a DataFrame indexed by the observation month,
+      with two columns:
+        prompt_settlement  -> the next‐month (front) contract’s settlement
+        settlement_12m     -> the contract 12 months out
+    """
+
+    # Make a copy so we don’t overwrite the original
+    df = monthly_df.copy()
+    
+    df['contr_period'] = df['contrdate'].apply(parse_contrdate)
+    df['obs_period']   = df['date_'].dt.to_period('M')
+
+    # Pivot so that each obs_period is a row, each contr_period is a column, values = settlement
+    pivoted = df.pivot(index='obs_period', columns='contr_period', values='settlement')
+
+    # For each row’s obs_period, look up settlement in columns for (obs_period+1) and (obs_period+12)
+    prompt_vals, yoy_vals = [], []
+    for p in pivoted.index:
+        next_p = p + 1
+        yoy_p  = p + 12
+        prompt_vals.append(pivoted.loc[p, next_p] if next_p in pivoted.columns else np.nan)
+        yoy_vals.append(pivoted.loc[p, yoy_p] if yoy_p in pivoted.columns else np.nan)
+
+    # Build a result DataFrame
+    out = pd.DataFrame({
+        'date_': pivoted.index.to_timestamp(),
+        'prompt_settlement': prompt_vals,
+        'settlement_12m':    yoy_vals
+    })
+    return out.set_index('date_')
+
+
 
 def compute_futures_stats(monthly_df):
     """
@@ -43,8 +92,9 @@ def process_single_product(product_contract_code, time_period='paper'):
     data_contracts = fetch_wrds_fut_contract(futcodes, time_period)
     if data_contracts.empty:
         return None
-    data_contracts["month"] = data_contracts["date_"].dt.to_period("M")
-    monthly_df = data_contracts.groupby("month").apply(extract_prompt_and_12m_settlements).reset_index()
+    #data_contracts["month"] = data_contracts["date_"].dt.to_period("M")
+    
+    monthly_df = data_contracts.groupby("month").apply(extract_prompt_and_12m_settlements, include_groups=False).reset_index()
     stats = compute_futures_stats(monthly_df)
     commodity_name = info_df["contrname"].unique()[0]
     contract_code = info_df["contrcode"].unique()[0]
@@ -190,8 +240,10 @@ if __name__ == "__main__":
     final_current = final_table(table_current)
 
     print("=== PAPER PERIOD ===")
-    print(final_paper.to_string(sparsify=True))
+    #print(final_paper.to_string(sparsify=True))
+    print(final_paper.to_string())
     print()
     print("=== CURRENT PERIOD ===")
-    print(final_current.to_string(sparsify=True))
+    #print(final_current.to_string(sparsify=True))
+    print(final_current.to_string())
     print()
