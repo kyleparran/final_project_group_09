@@ -23,15 +23,7 @@ def parse_contrdate(c):
 
 def extract_prompt_and_12m_settlements(monthly_df):
     """
-    Expects:
-      monthly_df with columns:
-        date_      (the observation date, dtype=Timestamp)
-        settlement (float)
-        contrdate  (string in MMYY or MM/YY format, e.g. '0303','11/77')
-      The function returns a DataFrame indexed by the observation month,
-      with two columns:
-        prompt_settlement  -> the next‐month (front) contract’s settlement
-        settlement_12m     -> the contract 12 months out
+    NEED TO ADD DOCSTRING
     """
 
     # Make a copy so we don’t overwrite the original
@@ -40,24 +32,25 @@ def extract_prompt_and_12m_settlements(monthly_df):
     df['contr_period'] = df['contrdate'].apply(parse_contrdate)
     df['obs_period']   = df['date_'].dt.to_period('M')
 
-    # Pivot so that each obs_period is a row, each contr_period is a column, values = settlement
-    pivoted = df.pivot(index='obs_period', columns='contr_period', values='settlement')
+    # Filter the DataFrame to only include rows where contr_period is 1 month or 12 months ahead of obs_period
+    #df = df[(df['contr_period'] == df['obs_period'] + 1) | (df['contr_period'] == df['obs_period'] + 11)]
 
-    # For each row’s obs_period, look up settlement in columns for (obs_period+1) and (obs_period+12)
-    prompt_vals, yoy_vals = [], []
-    for p in pivoted.index:
-        next_p = p + 1
-        yoy_p  = p + 12
-        prompt_vals.append(pivoted.loc[p, next_p] if next_p in pivoted.columns else np.nan)
-        yoy_vals.append(pivoted.loc[p, yoy_p] if yoy_p in pivoted.columns else np.nan)
+    #df['prompt_settlement'] = df[df['contr_period'] == df['obs_period'] + 1]['settlement']
+    df = df.sort_values(by=['obs_period', 'contr_period'])
+    temp = df.set_index(["obs_period", "contr_period"])["settlement"]
 
-    # Build a result DataFrame
-    out = pd.DataFrame({
-        'date_': pivoted.index.to_timestamp(),
-        'prompt_settlement': prompt_vals,
-        'settlement_12m':    yoy_vals
-    })
-    return out.set_index('date_')
+    basis_df = pd.DataFrame(index=df['obs_period'].unique())
+
+    basis_df["prompt_settlement"] = basis_df.index.to_series().apply(
+        lambda op: temp.get((op, op + 1), float("nan"))  # or np.nan
+    )
+
+    basis_df["11mth_settlement"] = basis_df.index.to_series().apply(
+        lambda op: temp.get((op, op + 11), float("nan"))  # or np.nan
+    )
+
+    #basis_df['basis'] = (np.log(basis_df['prompt_settlement']) - np.log(basis_df['11mth_settlement'])) / 11
+    return basis_df
 
 
 
