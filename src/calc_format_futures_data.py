@@ -1,17 +1,20 @@
 from pull_futures_data import *
-"""
-def extract_prompt_and_12m_settlements(df_month):
-    
-    #Pick earliest row as prompt and last row as 12-month.
-    
-    df_month = df_month.sort_values(by="date_")
-    prompt = df_month.iloc[0]
-    last_12m = df_month.iloc[-1] if len(df_month) > 1 else None
-    return pd.Series({
-        "prompt_settlement": prompt["settlement"],
-        "contract_12m_settlement": last_12m["settlement"] if last_12m is not None else np.nan
-    })
+
+def futures_series_to_monthly(df):
     """
+    NEED TO ADD DOCSTRING
+    """
+    df = df.sort_values(["futcode", "date_"])
+    monthly_df = df.groupby(["futcode", df["date_"].dt.to_period("M")]).tail(1)
+    monthly_df['contr_period'] = monthly_df['contrdate'].apply(parse_contrdate)
+    monthly_df['obs_period']   = monthly_df['date_'].dt.to_period('M')
+
+    monthly_df = monthly_df.drop(columns=["date_", "contrdate"])
+
+    monthly_df = monthly_df.sort_values(by=['obs_period', 'contr_period'])
+
+    return monthly_df
+
 # Parse the contrdate strings into a monthly Period (e.g. '03/03' -> 2003-03)
 def parse_contrdate(c):
     c = c.replace('/', '')  # handle both 'MMYY' & 'MM/YY'
@@ -21,53 +24,66 @@ def parse_contrdate(c):
     year = (2000 + yy) if yy < 50 else (1900 + yy)
     return pd.Period(freq='M', year=year, month=mm)
 
-def extract_prompt_and_12m_settlements(monthly_df):
+def extract_first_through_12th_contracts(monthly_df):
     """
     NEED TO ADD DOCSTRING
     """
 
-    # Make a copy so we don’t overwrite the original
-    df = monthly_df.copy()
-    
-    df['contr_period'] = df['contrdate'].apply(parse_contrdate)
-    df['obs_period']   = df['date_'].dt.to_period('M')
+    temp = monthly_df.set_index(["obs_period", "contr_period"])["settlement"]
 
-    # Filter the DataFrame to only include rows where contr_period is 1 month or 12 months ahead of obs_period
-    #df = df[(df['contr_period'] == df['obs_period'] + 1) | (df['contr_period'] == df['obs_period'] + 11)]
+    first_through_12th_contracts_df = pd.DataFrame(index=monthly_df['obs_period'].unique())
 
-    #df['prompt_settlement'] = df[df['contr_period'] == df['obs_period'] + 1]['settlement']
-    df = df.sort_values(by=['obs_period', 'contr_period'])
-    temp = df.set_index(["obs_period", "contr_period"])["settlement"]
+    for i in range(1, 13):
+        first_through_12th_contracts_df[f"{i}mth_settlement"] = first_through_12th_contracts_df.index.to_series().apply(
+            lambda op: temp.get((op, op + i), float("nan"))  # or np.nan
+        )
 
-    basis_df = pd.DataFrame(index=df['obs_period'].unique())
-
-    basis_df["prompt_settlement"] = basis_df.index.to_series().apply(
-        lambda op: temp.get((op, op + 1), float("nan"))  # or np.nan
-    )
-
-    basis_df["11mth_settlement"] = basis_df.index.to_series().apply(
-        lambda op: temp.get((op, op + 11), float("nan"))  # or np.nan
-    )
-
-    #basis_df['basis'] = (np.log(basis_df['prompt_settlement']) - np.log(basis_df['11mth_settlement'])) / 11
-    return basis_df
+    return first_through_12th_contracts_df
 
 
 
-def compute_futures_stats(monthly_df):
+def compute_futures_stats(first_through_12th_contracts_df, monthly_df):
     """
     Compute basis, frequency of backwardation, and basic returns stats.
     """
-    monthly_df["basis"] = (np.log(monthly_df["prompt_settlement"]) - np.log(monthly_df["contract_12m_settlement"])) / 11
-    freq_bw = (monthly_df["basis"] > 0).mean() * 100
-    monthly_df["excess_return"] = monthly_df["prompt_settlement"].pct_change() * 100
-    er_mean = monthly_df["excess_return"].mean()
-    er_std = monthly_df["excess_return"].std()
+    basis_df = pd.DataFrame(index=first_through_12th_contracts_df.index)
+    first_through_12th_contracts_df['T1'] = first_through_12th_contracts_df.apply(
+        lambda row: next((i for i in range(1, 13) if not pd.isna(row[f"{i}mth_settlement"])), np.nan),
+        axis=1
+    )
+    first_through_12th_contracts_df['T2'] = first_through_12th_contracts_df.apply(
+        lambda row: next((i for i in range(12, 0, -1) if not pd.isna(row[f"{i}mth_settlement"])), np.nan),
+        axis=1
+    )
+    basis_df['T1'] = first_through_12th_contracts_df['T1']
+    basis_df['T2'] = first_through_12th_contracts_df['T2']
+    basis_df['month_diff'] = basis_df['T2'] - basis_df['T1']
+
+    basis_df['settlement_T1'] = first_through_12th_contracts_df.apply(
+        lambda row: row[f"{int(row['T1'])}mth_settlement"] if not pd.isna(row['T1']) else np.nan,
+        axis=1
+    )
+    basis_df['settlement_T2'] = first_through_12th_contracts_df.apply(
+        lambda row: row[f"{int(row['T2'])}mth_settlement"] if not pd.isna(row['T1']) else np.nan,
+        axis=1
+    )
+
+    basis_df['basis'] = (np.log(basis_df['settlement_T1']) - np.log(basis_df['settlement_T2'])) / basis_df['month_diff'] * 100
+    basis_df = basis_df.dropna()
+
+    freq_bw = (basis_df["basis"] > 0).mean() * 100
+    n_valid = len(basis_df)
+    
+    excess_return_df = monthly_df.groupby("futcode").apply(
+        lambda x: (x.sort_values(by="obs_period").iloc[-1]["settlement"] / x.sort_values(by="obs_period").iloc[0]["settlement"] - 1) * 100
+    ).reset_index(name="excess_return")
+
+    er_mean = excess_return_df["excess_return"].mean()
+    er_std = excess_return_df["excess_return"].std()
     sharpe = er_mean / er_std if er_std != 0 else np.nan
-    n_valid = len(monthly_df.dropna())
     return {
         "N": n_valid,
-        "mean_basis": monthly_df["basis"].mean(),
+        "mean_basis": basis_df["basis"].mean(),
         "freq_bw": freq_bw,
         "excess_return_mean": er_mean,
         "excess_return_std": er_std,
@@ -81,14 +97,16 @@ def process_single_product(product_contract_code, time_period='paper'):
     info_df = fetch_wrds_contract_info(product_contract_code, time_period)
     if info_df.empty:
         return None
-    futcodes = tuple(info_df["futcode"].unique())
-    data_contracts = fetch_wrds_fut_contract(futcodes, time_period)
+    futcodes_contrdates = info_df.set_index("futcode")["contrdate"].to_dict()
+    data_contracts = fetch_wrds_fut_contract(futcodes_contrdates, time_period)
     if data_contracts.empty:
         return None
-    #data_contracts["month"] = data_contracts["date_"].dt.to_period("M")
     
-    monthly_df = data_contracts.groupby("month").apply(extract_prompt_and_12m_settlements, include_groups=False).reset_index()
-    stats = compute_futures_stats(monthly_df)
+    monthly_df = futures_series_to_monthly(data_contracts)
+    first_through_12th_contracts_df = extract_first_through_12th_contracts(monthly_df)
+
+    stats = compute_futures_stats(first_through_12th_contracts_df, monthly_df)
+    
     commodity_name = info_df["contrname"].unique()[0]
     contract_code = info_df["contrcode"].unique()[0]
     return pd.DataFrame({
