@@ -56,4 +56,32 @@ def fetch_wrds_fut_contract(futcodes_contrdates, time_period='paper'):
     df["contrdate"] = df["futcode"].map(futcodes_contrdates)
     return df
 
+def pull_all_futures_data(time_period="paper"):
+    """
+    Pull raw data from WRDS for all product codes in product_list,
+    then concatenate into one DataFrame.
+    """
+    product_list = [
+        3160, 289, 3161, 1980, 2038, 3247, 1992, 361, 385, 2036,
+        379, 3256, 396, 430, 1986, 2091, 2029, 2060, 3847, 2032,
+        3250, 2676, 2675, 3126, 2087, 2026, 2020, 2065, 2074, 2108
+    ]
+    all_frames = []
+    for code in product_list:
+        info_df = fetch_wrds_contract_info(code, time_period)
+        if info_df.empty:
+            continue
+        futcodes_contrdates = info_df.set_index("futcode")["contrdate"].to_dict()
+        data_contracts = fetch_wrds_fut_contract(futcodes_contrdates, time_period)
+        if not data_contracts.empty:
+            # add product_code (optional, for reference)
+            data_contracts["product_code"] = code
+            all_frames.append(data_contracts)
+    if len(all_frames) > 0:
+        final_df = pd.concat(all_frames, ignore_index=True)
+    else:
+        final_df = pd.DataFrame()  # empty if nothing found
+    return final_df
+
+
 
