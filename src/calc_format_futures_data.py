@@ -1,18 +1,20 @@
 from pull_futures_data import *
 
 def futures_series_to_monthly(df):
+    """  
+    Convert a daily futures DataFrame into a monthly frequency by taking
+    the last available daily row for each (futcode, month). Also parses
+    contract periods and drops date columns to produce a final monthly dataset.
     """
-    NEED TO ADD DOCSTRING
-    """
+    
     df = df.sort_values(["futcode", "date_"])
-    monthly_df = df.groupby(["futcode", df["date_"].dt.to_period("M")]).tail(1)
-    monthly_df['contr_period'] = monthly_df['contrdate'].apply(parse_contrdate)
-    monthly_df['obs_period']   = monthly_df['date_'].dt.to_period('M')
+    monthly_df = df.groupby(["futcode", df["date_"].dt.to_period("M")]).tail(1).copy()
+
+    monthly_df["contr_period"] = monthly_df["contrdate"].apply(parse_contrdate)
+    monthly_df["obs_period"]   = monthly_df["date_"].dt.to_period("M")
 
     monthly_df = monthly_df.drop(columns=["date_", "contrdate"])
-
-    monthly_df = monthly_df.sort_values(by=['obs_period', 'contr_period'])
-
+    monthly_df = monthly_df.sort_values(by=["obs_period","contr_period"])
     return monthly_df
 
 # Parse the contrdate strings into a monthly Period (e.g. '03/03' -> 2003-03)
@@ -122,7 +124,7 @@ def process_single_product(product_contract_code, time_period='paper'):
 
 DISPLAY_NAME_MAP = {
     "WESTERN BARLEY": ("Barley", "WA"),
-    "BUTTER (CASH)": ("Butter", "O2"),
+    "BUTTER (CASH)": ("Butter", "02"),
     "CANOLA": ("Canola", "WC"),
     "COCOA": ("Cocoa", "CC"),
     "COFFEE 'C'": ("Coffee", "KC"),
@@ -160,8 +162,10 @@ format_dict = {
     "Sharpe ratio": "{:.2f}"
 }
 
-def main_summary(time_period='paper'):
-    """ Formatting Function that uses multi-level indexing to display the summary table as close as possible to the paper """
+
+def main_summary(time_period="paper"):
+    """A function for mapping and formatting the desired table results, as close as possible to 
+    the paper"""
     product_list = [
         3160, 289, 3161, 1980, 2038, 3247, 1992, 361, 385, 2036,
         379, 3256, 396, 430, 1986, 2091, 2029, 2060, 3847, 2032,
@@ -214,6 +218,8 @@ def main_summary(time_period='paper'):
         if row is not None:
             row["Sector"] = sector_map.get(code, "")
             summary_table = pd.concat([summary_table, row], ignore_index=True)
+    if time_period == "current":
+        summary_table = summary_table[~summary_table["Commodity"].str.lower().str.contains("mont belvieu", na=False)]
     summary_table.rename(columns={
         "Freq. of Backwardation (%)": "Freq. of bw.",
         "E(Re) (Mean Annual Excess Return)": "E[Re]",
@@ -223,6 +229,7 @@ def main_summary(time_period='paper'):
     return summary_table
 
 def rename_for_display(df):
+    """Formatting the Index"""
     df = df.copy()
     df["Symbol"] = ""
     for i in df.index:
@@ -234,14 +241,72 @@ def rename_for_display(df):
     return df
 
 def final_table(df):
+    df = df.rename(columns={
+        "Freq. of bw.": "Freq. of<br>bw.",
+        "Sharpe ratio": "Sharpe<br>ratio"
+    })
+
     df = rename_for_display(df)
-    df = df[["Sector","Commodity","Symbol","N","Basis","Freq. of bw.","E[Re]","σ[Re]","Sharpe ratio"]]
-    df = df.sort_values(["Sector","Commodity"])
-    df = df.set_index(["Sector","Commodity"])
-    df = df[["Symbol","N","Basis","Freq. of bw.","E[Re]","σ[Re]","Sharpe ratio"]]
-    df.index.set_names(["", ""], inplace=True)
-    df = df.style.format(format_dict)
-    return df
+    df = df[["Sector","Commodity","Symbol","N","Basis","Freq. of<br>bw.","E[Re]","σ[Re]","Sharpe<br>ratio"]]
+    df.sort_values(["Sector","Commodity"], inplace=True)
+    df.reset_index(drop=True, inplace=True)
+
+    df["Sector"] = df["Sector"].mask(df["Sector"].eq(df["Sector"].shift()))
+    df["Sector"].fillna("", inplace=True)
+
+    # decimal formatting
+    format_dict_local = {
+        "N": "{:.0f}",
+        "Basis": "{:.2f}",
+        "Freq. of<br>bw.": "{:.2f}",
+        "E[Re]": "{:.2f}",
+        "σ[Re]": "{:.2f}",
+        "Sharpe<br>ratio": "{:.2f}"
+    }
+    df_styled = df.style.format(format_dict_local)
+
+    e_col = df.columns.get_loc("E[Re]")
+    s_col = df.columns.get_loc("σ[Re]")
+    
+    table_styles = [
+        # Changing the font and type of header
+        {
+            "selector": "th",
+            "props": [
+                ("font-family", "Cambria, serif"),
+                ("font-size", "11pt"),
+                ("font-weight", "bold"),
+                ("vertical-align", "top"),
+                ("background-color", "#ffffff"),
+                ("border-bottom", "1px solid black"),
+                ("line-height", "1.2"),
+                ("padding", "4px")
+            ]
+        },
+        # Make E[Re] and σ[Re] headers not bold
+        {
+            "selector": f"th.col{e_col}, th.col{s_col}",
+            "props": [("font-weight", "normal")]
+        },
+        {
+            "selector": "td",
+            "props": [
+                ("font-family", "'Times New Roman', serif"),
+                ("font-size", "11pt"),
+                ("background-color", "#ffffff"),
+                ("border", "0px"),
+                ("line-height", "1.2"),
+                ("padding", "4px")
+            ]
+        },
+        {
+            "selector": ".row_heading, .blank",
+            "props": [("display", "none")]
+        }
+    ]
+    df_styled = df_styled.set_table_styles(table_styles, overwrite=False)
+    return df_styled
+
 
 if __name__ == "__main__":
     table_paper = main_summary(time_period="paper")
