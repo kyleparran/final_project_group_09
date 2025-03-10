@@ -1,17 +1,19 @@
 """
-Run or update the project. This file uses the `doit` Python package. It works
-like a Makefile, but is Python-based.
+Run or update the project. This file uses the `doit` Python package.
+Automates everything, including creating a minimal Sphinx project
+that references your Jupyter notebooks via MyST-NB, producing LaTeX + PDF.
 """
 
 import sys
 sys.path.insert(1, "./src/")
-
-import shutil
 from pathlib import Path
 from colorama import Fore, Style, init
 from doit.reporter import ConsoleReporter
 from os import environ
 import pandas as pd
+import os
+import shutil
+
 from pull_futures_data import pull_all_futures_data
 from calc_format_futures_data import main_summary, final_table
 from settings import config
@@ -20,7 +22,6 @@ try:
     in_slurm = environ["SLURM_JOB_ID"] is not None
 except:
     in_slurm = False
-
 
 class GreenReporter(ConsoleReporter):
     def write(self, stuff, **kwargs):
@@ -42,6 +43,8 @@ init(autoreset=True)
 
 DATA_DIR = Path(config("DATA_DIR"))
 OUTPUT_DIR = Path(config("OUTPUT_DIR"))
+
+NOTEBOOKS = ["project_walkthrough", "Project_Analysis"]
 
 def task_config():
     """
@@ -81,7 +84,7 @@ def task_pull_futures_data():
 
 def task_clean_futures_data():
     """
-    Clean the raw CSVs , save to _data/clean_...
+    Clean the raw CSVs, save to _data/clean_...
     """
     paper_raw = DATA_DIR / "raw_futures_paper.csv"
     current_raw = DATA_DIR / "raw_futures_current.csv"
@@ -89,6 +92,7 @@ def task_clean_futures_data():
     current_clean = DATA_DIR / "clean_futures_current.csv"
 
     def clean():
+        import pandas as pd
         dfp = pd.read_csv(paper_raw)
         dfp.drop_duplicates(subset=["futcode","date_","settlement"], inplace=True)
         dfp.to_csv(paper_clean, index=False)
@@ -108,7 +112,8 @@ def task_clean_futures_data():
 
 def task_calc_futures_data():
     """
-    Calculate final stats (paper/current) using main_summary & final_table functions.
+    Calculate final stats (paper/current) using main_summary & final_table.
+    CSV files in _data, HTML outputs in _output.
     """
     paper_clean = DATA_DIR / "clean_futures_paper.csv"
     current_clean = DATA_DIR / "clean_futures_current.csv"
@@ -118,10 +123,9 @@ def task_calc_futures_data():
     current_html = OUTPUT_DIR / "final_current.html"
 
     def calc():
-        # PAPER
-        df_paper = main_summary("paper")  
+        df_paper = main_summary("paper")
         df_paper.to_csv(paper_csv, index=False)
-        styled_paper = final_table(df_paper)  
+        styled_paper = final_table(df_paper)
         paper_html.write_text(styled_paper.to_html(), encoding="utf-8")
         print(f"Saved final paper CSV -> {paper_csv} and HTML -> {paper_html}")
 
@@ -138,21 +142,143 @@ def task_calc_futures_data():
         "clean": True,
     }
 
-NOTEBOOKS = ["project_walkthrough"] 
-
 def task_run_notebooks():
     """
-    Execute/convert Jupyter notebooks from ./src/ to HTML in _output
+    Convert notebooks to HTML & PDF (webpdf). 
+    No latex from nbconvert, so no pandoc needed here.
     """
     for nb in NOTEBOOKS:
         nb_path = Path("./src") / f"{nb}.ipynb"
+
+        # 1) HTML
         out_html = OUTPUT_DIR / f"{nb}.html"
         yield {
-            "name": nb,
+            "name": f"{nb}_html",
             "actions": [
-                f"jupyter nbconvert --execute --to html --output-dir={OUTPUT_DIR} {nb_path}"
+                f"jupyter nbconvert --execute --to html "
+                f"--output-dir={OUTPUT_DIR} {nb_path}"
             ],
             "file_dep": [nb_path],
             "targets": [out_html],
             "clean": True,
         }
+
+        # 2) PDF via webpdf
+        out_pdf = OUTPUT_DIR / f"{nb}.pdf"
+        yield {
+            "name": f"{nb}_pdf",
+            "actions": [
+                f"jupyter nbconvert --execute --to webpdf --allow-chromium-download "
+                f"--output-dir={OUTPUT_DIR} {nb_path}"
+            ],
+            "file_dep": [nb_path],
+            "targets": [out_pdf],
+            "clean": True,
+        }
+
+def task_init_sphinx():
+    """
+    Creates a minimal Sphinx + MyST-NB project in docs/ automatically,
+    referencing the notebooks in ./src. No user interaction needed.
+    """
+    docs_dir = Path("docs")
+    conf_py = docs_dir / "conf.py"
+    index_rst = docs_dir / "index.rst"
+
+    def init_sphinx():
+        # 1) create docs/ if missing
+        docs_dir.mkdir(parents=True, exist_ok=True)
+
+        # 2) minimal conf.py with myst-nb
+        conf_content = r'''
+import os
+import sys
+sys.path.insert(0, os.path.abspath(".."))
+
+extensions = [
+    "myst_nb",
+]
+
+myst_enable_extensions = [
+    "colon_fence",
+]
+
+# The master toctree document.
+master_doc = "index"
+
+project = "ProjectDocs"
+author = "Your Name"
+release = "0.1"
+
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+
+html_theme = "alabaster"
+'''
+        conf_py.write_text(conf_content.strip(), encoding="utf-8")
+
+        # 3) minimal index.rst referencing the notebooks
+        # We assume each notebook is in ../src relative to docs/
+        # MyST-NB can parse .ipynb directly if we list them in the toctree.
+        toctree_lines = []
+        for nb in NOTEBOOKS:
+            toctree_lines.append(f"   ../src/{nb}.ipynb")
+
+        index_content = f"""
+Welcome to ProjectDocs
+======================
+
+.. toctree::
+   :maxdepth: 2
+
+{'\n'.join(toctree_lines)}
+"""
+        index_rst.write_text(index_content.strip() + "\n", encoding="utf-8")
+
+    return {
+        "actions": [init_sphinx],
+        "targets": [conf_py, index_rst],
+        "clean": True,
+    }
+
+def task_sphinx_latexpdf():
+    """
+    Build LaTeX & PDF from notebooks using Sphinx + MyST-NB,
+    fully automated, no pandoc needed. 
+    Creates .tex and .pdf in _output/sphinx_latex/.
+    """
+    docs_dir = Path("docs")
+    build_dir = OUTPUT_DIR / "sphinx_latex"
+    latex_pdf = build_dir / "ProjectDocs.pdf"  # final PDF name
+
+    def build_latex():
+        # 1) Sphinx build LaTeX
+        cmd_build = f"sphinx-build -b latex {docs_dir} {build_dir}"
+        print(cmd_build)
+        ret = os.system(cmd_build)
+        if ret != 0:
+            raise RuntimeError("Sphinx LaTeX build failed.")
+
+        # 2) find the main .tex file
+        # By default, Sphinx might name it ProjectDocs.tex or docs.tex
+        main_tex = None
+        for f in build_dir.glob("*.tex"):
+            main_tex = f
+            break
+        if not main_tex:
+            raise FileNotFoundError("No .tex file found in build directory.")
+
+        # 3) compile .tex -> .pdf using system pdflatex (TeX Live)
+        # do it twice for references
+        for _ in range(2):
+            cmd_pdf = f"pdflatex -interaction=nonstopmode -output-directory={build_dir} {main_tex.name}"
+            print(cmd_pdf)
+            ret2 = os.system(cmd_pdf)
+            if ret2 != 0:
+                raise RuntimeError("pdflatex failed. Check logs.")
+
+    return {
+        "actions": [build_latex],
+        "file_dep": ["docs/conf.py", "docs/index.rst"],  # from task_init_sphinx
+        "targets": [latex_pdf],
+        "clean": True,
+    }

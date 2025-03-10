@@ -1,5 +1,42 @@
 from pull_futures_data import *
 
+"""All of the functions below are associated with the assembly of data towards replciating
+the commodity table by Fan Yang"""
+
+sector_map = {
+    3160: "Agriculture",
+    289:  "Agriculture",
+    3161: "Agriculture",
+    1980: "Agriculture",
+    2038: "Agriculture",
+    3247: "Agriculture",
+    1992: "Agriculture",
+    361:  "Agriculture",
+    385:  "Agriculture",
+    2036: "Agriculture",
+    379:  "Agriculture",
+    3256: "Agriculture",
+    396:  "Agriculture",
+    430:  "Agriculture",
+    1986: "Energy",
+    2091: "Energy",
+    2029: "Energy",
+    2060: "Energy",
+    3847: "Energy",   
+    2032: "Energy",   
+    3250: "Livestock",
+    2676: "Livestock",
+    2675: "Livestock",
+    3126: "Metals",
+    2087: "Metals",   
+    2026: "Metals",   
+    2020: "Metals",   
+    2065: "Metals",   
+    2074: "Metals",   
+    2108: "Metals"    
+}
+
+
 def futures_series_to_monthly(df):
     """  
     Convert a daily futures DataFrame into a monthly frequency by taking
@@ -28,7 +65,15 @@ def parse_contrdate(c):
 
 def extract_first_through_12th_contracts(monthly_df):
     """
-    NEED TO ADD DOCSTRING
+    Constructs a wide DataFrame of monthly settlement prices for the 1st through 12th contracts.
+
+    Given a DataFrame where each row represents a (futcode, obs_period, contr_period, settlement),
+    this function pivots the data so that for each observed monthly period (index),
+    it creates 12 columns: "1mth_settlement" up to "12mth_settlement."
+    Each column reflects the settlement price of that contract relative to the observation period.
+
+    Specifically, for each obs_period = op, we look up the settlement for contr_period = (op + i),
+    where i ranges from 1 to 12. If the combination (op, op + i) is missing, a NaN is placed there.
     """
 
     temp = monthly_df.set_index(["obs_period", "contr_period"])["settlement"]
@@ -140,6 +185,7 @@ DISPLAY_NAME_MAP = {
     "CRUDE OIL (LIGHT SWEET)": ("Crude oil", "CL"),
     "GASOLINE RBOB": ("Gasoline", "RB"),
     "HEATING OIL (NEW YORK)": ("Heating oil", "HO"),
+    "Mont Belvieu LDH Propane (OPIS) Swap Pit":("Propane", "PN"),
     "NATURAL GAS": ("Natural gas", "NG"),
     "FEEDER CATTLE COMP.": ("Feeder cattle", "FC"),
     "LEAN HOGS COMP.": ("Lean hogs", "LH"),
@@ -181,45 +227,16 @@ def main_summary(time_period="paper"):
         "σ(Re) (Std Dev of Excess Return)",
         "Sharpe Ratio"
     ])
-    sector_map = {
-        3160: "Agriculture",
-        289: "Agriculture",
-        3161: "Agriculture",
-        1980: "Agriculture",
-        2038: "Agriculture",
-        3247: "Agriculture",
-        1992: "Agriculture",
-        361: "Agriculture",
-        385: "Agriculture",
-        2036: "Agriculture",
-        379: "Agriculture",
-        3256: "Agriculture",
-        396: "Agriculture",
-        430: "Agriculture",
-        1986: "Energy",
-        2091: "Energy",
-        2029: "Energy",
-        2060: "Energy",
-        3847: "Energy",
-        2032: "Energy",
-        3250: "Livestock",
-        2676: "Livestock",
-        2675: "Livestock",
-        3126: "Metals",
-        2087: "Metals",
-        2026: "Metals",
-        2020: "Metals",
-        2065: "Metals",
-        2074: "Metals",
-        2108: "Metals"
-    }
     for code in product_list:
         row = process_single_product(code, time_period)
         if row is not None:
             row["Sector"] = sector_map.get(code, "")
             summary_table = pd.concat([summary_table, row], ignore_index=True)
     if time_period == "current":
-        summary_table = summary_table[~summary_table["Commodity"].str.lower().str.contains("mont belvieu", na=False)]
+        summary_table = summary_table[~(
+            summary_table["Commodity"].str.lower().str.contains("mont belvieu", na=False) 
+            & (summary_table["Contract Code"] != 3847)
+        )]
     summary_table.rename(columns={
         "Freq. of Backwardation (%)": "Freq. of bw.",
         "E(Re) (Mean Annual Excess Return)": "E[Re]",
@@ -241,6 +258,8 @@ def rename_for_display(df):
     return df
 
 def final_table(df):
+    """ This is the final format to enable the closest replication in format to the display of the
+        Yang Paper. It changes the headers and allows for HTML formatting to mimic the design of table 1"""
     df = df.rename(columns={
         "Freq. of bw.": "Freq. of<br>bw.",
         "Sharpe ratio": "Sharpe<br>ratio"
@@ -316,10 +335,8 @@ if __name__ == "__main__":
     final_current = final_table(table_current)
 
     print("=== PAPER PERIOD ===")
-    #print(final_paper.to_string(sparsify=True))
     print(final_paper.to_string())
     print()
     print("=== CURRENT PERIOD ===")
-    #print(final_current.to_string(sparsify=True))
     print(final_current.to_string())
     print()

@@ -5,15 +5,15 @@ from settings import config
 from pathlib import Path
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
-
 DATA_DIR = Path(config("DATA_DIR"))
+DATA_FILE = DATA_DIR / "df_all.parquet"
 WRDS_USERNAME = config("WRDS_USERNAME")
 db = wrds.Connection(wrds_username=WRDS_USERNAME)
 
 PAPER_START_DATE = '1970-01-01'
 PAPER_END_DATE   = '2008-12-31'
-CURRENT_START_DATE = '2009-01-01'
-CURRENT_END_DATE   = '2024-02-28'
+CURRENT_START_DATE = '2008-12-31'
+CURRENT_END_DATE   = '2025-02-28'
 
 def fetch_wrds_contract_info(product_contract_code, time_period='paper'):
     """
@@ -83,5 +83,22 @@ def pull_all_futures_data(time_period="paper"):
         final_df = pd.DataFrame()  # empty if nothing found
     return final_df
 
+def get_combined_futures_data():
+    """
+    Checks if a combined (paper + current) futures dataset already exists locally.
+    If so, reads from that file to avoid repeated WRDS pulls.
+    If not, pulls from WRDS, saves to a local parquet file, and returns it.
+    """
+    if DATA_FILE.exists():
+        df_all = pd.read_parquet(DATA_FILE)
+        if not df_all.empty:
+            return df_all
+    
+    df_paper = pull_all_futures_data("paper")
+    df_current = pull_all_futures_data("current")
+    df_all = pd.concat([df_paper, df_current], ignore_index=True)
+    if not df_all.empty:
+        df_all.to_parquet(DATA_FILE)
+    return df_all
 
 
