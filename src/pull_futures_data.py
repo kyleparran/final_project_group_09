@@ -32,7 +32,10 @@ def fetch_wrds_contract_info(product_contract_code, time_period='paper'):
       AND startdate >= '{start_date}'
       AND lasttrddate <= '{end_date}'
     """
-    return db.raw_sql(query)
+    df = db.raw_sql(query)
+    if df.empty:
+        raise ValueError(f"No data found for contract code {product_contract_code} in the specified time period.")
+    return df
 
 def fetch_wrds_fut_contract(futcodes_contrdates, time_period='paper'):
     """
