@@ -82,33 +82,6 @@ def task_pull_clean_futures_data():
         "clean": True,
     }
 
-"""def task_clean_futures_data():
-    """
-    #Clean the raw CSVs, save to _data/clean_...
-"""
-paper_raw = DATA_DIR / "raw_futures_paper.csv"
-current_raw = DATA_DIR / "raw_futures_current.csv"
-paper_clean = DATA_DIR / "clean_futures_paper.csv"
-current_clean = DATA_DIR / "clean_futures_current.csv"
-
-def clean():
-    import pandas as pd
-    dfp = pd.read_csv(paper_raw)
-    dfp.drop_duplicates(subset=["futcode","date_","settlement"], inplace=True)
-    dfp.to_csv(paper_clean, index=False)
-    print(f"Cleaned -> {paper_clean} with {len(dfp)} rows.")
-
-    dfc = pd.read_csv(current_raw)
-    dfc.drop_duplicates(subset=["futcode","date_","settlement"], inplace=True)
-    dfc.to_csv(current_clean, index=False)
-    print(f"Cleaned -> {current_clean} with {len(dfc)} rows.")
-
-return {
-    "actions": [clean],
-    "file_dep": [paper_raw, current_raw],
-    "targets": [paper_clean, current_clean],
-    "clean": True,
-}"""
 
 def task_calc_futures_data():
     """
