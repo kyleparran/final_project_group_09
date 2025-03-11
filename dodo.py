@@ -148,7 +148,7 @@ def task_run_notebooks():
     No latex from nbconvert, so no pandoc needed here.
     """
     for nb in NOTEBOOKS:
-        nb_path = Path("./src") / f"{nb}.ipynb"
+        nb_path = Path("./notebooks") / f"{nb}.ipynb"
 
         # 1) HTML
         out_html = OUTPUT_DIR / f"{nb}.html"
@@ -175,6 +175,33 @@ def task_run_notebooks():
             "targets": [out_pdf],
             "clean": True,
         }
+
+
+def task_create_figures():
+    """
+    Create and save LaTeX tables and PNG figures for the final report (if they don't exist).
+    """
+
+    # Define expected output files (both .tex and .png)
+    expected_outputs = [
+        OUTPUT_DIR / "sector_settlement_summary.tex",
+        OUTPUT_DIR / "paper_table1_replication_paper.tex",
+        OUTPUT_DIR / "paper_table1_replication_current.tex",
+        OUTPUT_DIR / "all_commodities_settlement.png",
+        OUTPUT_DIR / "commodity_correlation_heatmap.png",
+        OUTPUT_DIR / "commodity_coverage_heatmap.png"
+    ]
+
+    # Run the script to generate missing figures
+    action = ["python src/create_figures.py"]
+
+    return {
+        "actions": action,
+        "targets": expected_outputs,
+        "uptodate": [True],  # Mark task as complete if outputs exist
+        "clean": True,
+    }
+
 
 def task_init_sphinx():
     """
@@ -214,14 +241,15 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "alabaster"
 '''
-        conf_py.write_text(conf_content.strip(), encoding="utf-8")
+        if not conf_py.exists():
+            conf_py.write_text(conf_content.strip(), encoding="utf-8")
 
         # 3) minimal index.rst referencing the notebooks
         # We assume each notebook is in ../src relative to docs/
         # MyST-NB can parse .ipynb directly if we list them in the toctree.
         toctree_lines = []
         for nb in NOTEBOOKS:
-            toctree_lines.append(f"   ../src/{nb}.ipynb")
+            toctree_lines.append(f"   ../notebooks/{nb}.ipynb")
         
         index_content = f'''
 Welcome to ProjectDocs
@@ -232,11 +260,13 @@ Welcome to ProjectDocs
 
 ''' + "\n".join(toctree_lines)
         
-        index_rst.write_text(index_content.strip() + "\n", encoding="utf-8")
+        if not index_rst.exists():
+            index_rst.write_text(index_content.strip() + "\n", encoding="utf-8")
 
     return {
         "actions": [init_sphinx],
         "targets": [conf_py, index_rst],
+        "uptodate": [True],  # Mark task as complete if targets exist
         "clean": True,
     }
 
@@ -282,3 +312,25 @@ def task_sphinx_latexpdf():
         "targets": [latex_pdf],
         "clean": True,
     }
+
+def task_final_report_latex_to_pdf():
+    """
+    Compile the final report LaTeX file to PDF using pdflatex.
+    """
+    report_tex = Path("./reports/Final_Report.tex")
+    report_pdf = OUTPUT_DIR / "Final_Report.pdf"
+
+    def compile_pdf():
+        cmd = f"pdflatex -interaction=nonstopmode -output-directory={OUTPUT_DIR} {report_tex}"
+        print(cmd)
+        ret = os.system(cmd)
+        if ret != 0:
+            raise RuntimeError("pdflatex failed. Check logs.")
+
+    return {
+        "actions": [compile_pdf],
+        "file_dep": [report_tex],
+        "targets": [report_pdf],
+        "clean": True,
+    }
+
