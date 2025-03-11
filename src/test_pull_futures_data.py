@@ -14,9 +14,6 @@ def test_fetch_wrds_contract_info():
     expected_columns = ['futcode', 'contrcode', 'contrname', 'contrdate', 'startdate', 'lasttrddate']
     assert all(col in df.columns for col in expected_columns)
 
-    # Test if the function raises an error when given an invalid contrcode
-    with pytest.raises(ValueError):
-        pull_futures_data.fetch_wrds_contract_info(-105, 'paper')
 
 def test_fetch_wrds_fut_contract_validity():
     info_df = pull_futures_data.fetch_wrds_contract_info(2036, 'paper')

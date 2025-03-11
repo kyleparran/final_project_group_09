@@ -44,7 +44,7 @@ init(autoreset=True)
 DATA_DIR = Path(config("DATA_DIR"))
 OUTPUT_DIR = Path(config("OUTPUT_DIR"))
 
-NOTEBOOKS = ["project_walkthrough", "Project_Analysis"]
+NOTEBOOKS = ["Project_Walkthrough", "Project_Analysis"]
 
 def task_config():
     """
@@ -58,12 +58,12 @@ def task_config():
         "targets": [str(DATA_DIR), str(OUTPUT_DIR)],
     }
 
-def task_pull_futures_data():
+def task_pull_clean_futures_data():
     """
-    Pull raw futures data for 'paper' and 'current' periods, save CSVs in _data.
+    Pull clean futures data for 'paper' and 'current' periods from WRDS, save CSVs in _data.
     """
-    paper_raw = DATA_DIR / "raw_futures_paper.csv"
-    current_raw = DATA_DIR / "raw_futures_current.csv"
+    paper_raw = DATA_DIR / "clean_futures_paper.csv"
+    current_raw = DATA_DIR / "clean_futures_current.csv"
 
     def pull():
         df_paper = pull_all_futures_data("paper")
@@ -82,33 +82,33 @@ def task_pull_futures_data():
         "clean": True,
     }
 
-def task_clean_futures_data():
+"""def task_clean_futures_data():
     """
-    Clean the raw CSVs, save to _data/clean_...
-    """
-    paper_raw = DATA_DIR / "raw_futures_paper.csv"
-    current_raw = DATA_DIR / "raw_futures_current.csv"
-    paper_clean = DATA_DIR / "clean_futures_paper.csv"
-    current_clean = DATA_DIR / "clean_futures_current.csv"
+    #Clean the raw CSVs, save to _data/clean_...
+"""
+paper_raw = DATA_DIR / "raw_futures_paper.csv"
+current_raw = DATA_DIR / "raw_futures_current.csv"
+paper_clean = DATA_DIR / "clean_futures_paper.csv"
+current_clean = DATA_DIR / "clean_futures_current.csv"
 
-    def clean():
-        import pandas as pd
-        dfp = pd.read_csv(paper_raw)
-        dfp.drop_duplicates(subset=["futcode","date_","settlement"], inplace=True)
-        dfp.to_csv(paper_clean, index=False)
-        print(f"Cleaned -> {paper_clean} with {len(dfp)} rows.")
+def clean():
+    import pandas as pd
+    dfp = pd.read_csv(paper_raw)
+    dfp.drop_duplicates(subset=["futcode","date_","settlement"], inplace=True)
+    dfp.to_csv(paper_clean, index=False)
+    print(f"Cleaned -> {paper_clean} with {len(dfp)} rows.")
 
-        dfc = pd.read_csv(current_raw)
-        dfc.drop_duplicates(subset=["futcode","date_","settlement"], inplace=True)
-        dfc.to_csv(current_clean, index=False)
-        print(f"Cleaned -> {current_clean} with {len(dfc)} rows.")
+    dfc = pd.read_csv(current_raw)
+    dfc.drop_duplicates(subset=["futcode","date_","settlement"], inplace=True)
+    dfc.to_csv(current_clean, index=False)
+    print(f"Cleaned -> {current_clean} with {len(dfc)} rows.")
 
-    return {
-        "actions": [clean],
-        "file_dep": [paper_raw, current_raw],
-        "targets": [paper_clean, current_clean],
-        "clean": True,
-    }
+return {
+    "actions": [clean],
+    "file_dep": [paper_raw, current_raw],
+    "targets": [paper_clean, current_clean],
+    "clean": True,
+}"""
 
 def task_calc_futures_data():
     """
@@ -222,16 +222,16 @@ html_theme = "alabaster"
         toctree_lines = []
         for nb in NOTEBOOKS:
             toctree_lines.append(f"   ../src/{nb}.ipynb")
-
-        index_content = f"""
+        
+        index_content = f'''
 Welcome to ProjectDocs
 ======================
 
 .. toctree::
    :maxdepth: 2
 
-{'\n'.join(toctree_lines)}
-"""
+''' + "\n".join(toctree_lines)
+        
         index_rst.write_text(index_content.strip() + "\n", encoding="utf-8")
 
     return {
