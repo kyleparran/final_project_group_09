@@ -4,16 +4,25 @@ import wrds
 from settings import config
 from pathlib import Path
 import warnings
+
 warnings.filterwarnings("ignore", category=FutureWarning)
+
 DATA_DIR = Path(config("DATA_DIR"))
 DATA_FILE = DATA_DIR / "df_all.parquet"
+PAPER_START_DATE = config("PAPER_START_DATE")
+PAPER_END_DATE = config("PAPER_END_DATE")
+CURRENT_START_DATE = config("CURRENT_START_DATE")
+CURRENT_END_DATE = config("CURRENT_END_DATE")
 WRDS_USERNAME = config("WRDS_USERNAME")
+
+
 db = wrds.Connection(wrds_username=WRDS_USERNAME)
 
-PAPER_START_DATE = '1970-01-01'
+"""PAPER_START_DATE = '1970-01-01'
 PAPER_END_DATE   = '2008-12-31'
 CURRENT_START_DATE = '2008-12-31'
-CURRENT_END_DATE   = '2025-02-28'
+CURRENT_END_DATE   = '2025-02-28'"""
+
 
 def fetch_wrds_contract_info(product_contract_code, time_period='paper'):
     """

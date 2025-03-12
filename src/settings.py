@@ -71,8 +71,11 @@ d["BASE_DIR"] = Path(__file__).absolute().parent.parent
 
 # fmt: off
 ## Other .env variables
-d["START_DATE"] = _config("START_DATE", default="1913-01-01", cast=to_datetime)
-d["END_DATE"] = _config("END_DATE", default="2024-01-01", cast=to_datetime)
+d["PAPER_START_DATE"] = _config("PAPER_START_DATE", default="1970-01-01", cast=to_datetime)
+d["PAPER_END_DATE"] = _config("PAPER_END_DATE", default="2008-12-31", cast=to_datetime)
+d["CURRENT_START_DATE"] = _config("CURRENT_START_DATE", default="2008-12-31", cast=to_datetime)
+d["CURRENT_END_DATE"] = _config("CURRENT_END_DATE", default="2025-02-28", cast=to_datetime)
+
 d["PIPELINE_DEV_MODE"] = _config("PIPELINE_DEV_MODE", default=True, cast=bool)
 d["PIPELINE_THEME"] = _config("PIPELINE_THEME", default="pipeline")
 
@@ -82,6 +85,9 @@ d["MANUAL_DATA_DIR"] = if_relative_make_abs(_config('MANUAL_DATA_DIR', default=P
 d["OUTPUT_DIR"] = if_relative_make_abs(_config('OUTPUT_DIR', default=Path('_output'), cast=Path))
 d["PUBLISH_DIR"] = if_relative_make_abs(_config('PUBLISH_DIR', default=Path('_output/publish'), cast=Path))
 # fmt: on
+
+## WRDS Username
+d["WRDS_USERNAME"] = _config("WRDS_USERNAME")
 
 
 ## Name of Stata Executable in path

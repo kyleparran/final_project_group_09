@@ -127,7 +127,7 @@ def compute_futures_stats(first_through_12th_contracts_df, monthly_df):
 
     er_mean = excess_return_df["excess_return"].mean()
     er_std = excess_return_df["excess_return"].std()
-    sharpe = er_mean / er_std if er_std != 0 else np.nan
+    sharpe = 100 * er_mean / er_std if er_std != 0 else np.nan
     return {
         "N": n_valid,
         "mean_basis": basis_df["basis"].mean(),
