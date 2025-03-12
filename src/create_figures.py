@@ -198,12 +198,13 @@ def paper_table1_replication_latex():
 
             # Format numbers before saving
             format_dict = {
+                "contrcode": "{:.0f}",
                 "N": "{:.0f}",
-                "Basis": "{:.4f}",
+                "Basis": "{:.2f}",
                 "Freq. of bw.": "{:.2f}",
-                "E[Re]": "{:.6f}",
-                "σ[Re]": "{:.6f}",
-                "Sharpe ratio": "{:.6f}"
+                "E[Re]": "{:.2f}",
+                "σ[Re]": "{:.2f}",
+                "Sharpe ratio": "{:.2f}"
             }
 
             for col, fmt in format_dict.items():

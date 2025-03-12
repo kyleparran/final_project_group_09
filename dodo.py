@@ -286,24 +286,19 @@ def task_sphinx_latexpdf():
         "clean": True,
     }
 
+
 def task_final_report_latex_to_pdf():
     """
-    Compile the final report LaTeX file to PDF using pdflatex.
+    Compile the final report LaTeX file to PDF using latexmk.
     """
     report_tex = Path("./reports/Final_Report.tex")
     report_pdf = OUTPUT_DIR / "Final_Report.pdf"
 
-    def compile_pdf():
-        cmd = f"pdflatex -interaction=nonstopmode -output-directory={OUTPUT_DIR} {report_tex}"
-        print(cmd)
-        ret = os.system(cmd)
-        if ret != 0:
-            raise RuntimeError("pdflatex failed. Check logs.")
-
     return {
-        "actions": [compile_pdf],
-        "file_dep": [report_tex],
-        "targets": [report_pdf],
+        "actions": [
+            f"latexmk -xelatex -halt-on-error -cd -output-directory={OUTPUT_DIR} {report_tex}"
+        ],
+        "file_dep": [str(report_tex)],
+        "targets": [str(report_pdf)],
         "clean": True,
     }
-
