@@ -162,7 +162,9 @@ def task_create_figures():
         OUTPUT_DIR / "paper_table1_replication_current.tex",
         OUTPUT_DIR / "all_commodities_settlement.png",
         OUTPUT_DIR / "commodity_correlation_heatmap.png",
-        OUTPUT_DIR / "commodity_coverage_heatmap.png"
+        OUTPUT_DIR / "commodity_coverage_heatmap.png",
+        OUTPUT_DIR / "sample_future_curves_basis_1986.png",
+        OUTPUT_DIR / "sample_future_curves_basis_2060.png"
     ]
 
     # Run the script to generate missing figures

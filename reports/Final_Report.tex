@@ -211,6 +211,41 @@ markets have experienced significantly higher fluctuations over time. Overall, \
 strategy surrounding commodities, but without complete replication, and more in-depth knowledge of how he constructed
 this table, it is hard to validate his approach and findings. 
 
+\begin{figure}[ht!]
+  \centering
+  \caption{Sample Futures Curves - Crude Oil}
+  \begin{adjustbox}{max width=\textwidth}
+  \includegraphics[width=1\linewidth]{\PathToOutput/sample_future_curves_basis_1986.png}
+  \end{adjustbox}
+  \label{fig:crude_futures}
+\end{figure}
+
+\begin{figure}[ht!]
+  \centering
+  \caption{Sample Futures Curves - Natural Gas}
+  \begin{adjustbox}{max width=\textwidth}
+  \includegraphics[width=1\linewidth]{\PathToOutput/sample_future_curves_basis_2060.png}
+  \end{adjustbox}
+  \label{fig:natgas_futures}
+\end{figure}
+
+\clearpage
+Figures \ref{fig:crude_futures} and \ref{fig:natgas_futures} highlight key differences in the term structures of crude oil and natural gas futures. Crude oil curves predominantly exhibit backwardation, where near-term contracts trade at a premium, reflecting strong spot demand and inventory constraints. In contrast, natural gas futures frequently transition between contango and backwardation due to seasonal demand fluctuations.
+
+These structural differences impact our basis calculations. Crude oil’s stable backwardation leads to a more predictable basis, while natural gas shows greater volatility, making basis estimates highly sensitive to contract selection and seasonal effects. The use of the nearest available maturities (T1, T2) may introduce distortions, particularly in natural gas, where abrupt shifts in market conditions affect pricing.
+
+Potential methodological limitations arise from:
+\begin{itemize}
+    \item Sensitivity to maturity selection, particularly when contracts are unavailable for specific months.
+    \item Ignorance of intermediate maturities, which may provide more insightful basis estimates.
+    \item Inadequate consideration of seasonal effects, which can significantly impact natural gas pricing.
+\end{itemize}
+
+In summary, there are several critiques to be made of \cite{Yang2013}'s approach, which we have attempted to replicate,
+but given the analysis of the results,
+there is still valuable insight to be drawn from the paper's findings and the data we have processed,
+especially when considering the difficulty of obtaining and processing long-term commodity futures data.
+
 
 \clearpage
 

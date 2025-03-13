@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
 import matplotlib
+import matplotlib.dates as mdates
 
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -809,6 +810,69 @@ def plot_commodity_coverage_heatmap_png(
         logging.error(f"An error occurred while generating the heatmap: {e}")
 
 
+def plot_sample_future_curves_basis_png(product_contract_codes=[1986, 2060], time_period="paper"):
+    """
+    Generates and saves PNG figures of sample future curves basis for given product contract codes.
+    Parameters:
+    product_contract_codes (list): List of product contract codes to generate figures for. Default is [1986, 2060].
+    time_period (str): Time period for fetching contract information and data. Default is "paper".
+    Returns:
+    None
+    The function fetches contract information and future contract data from WRDS for the given product contract codes
+    and time period. It processes the data to extract monthly series and the first through twelfth contracts. It then
+    plots the sample future curves basis for a subset of the data and saves the figures as PNG files in the specified
+    output directory.
+    Raises:
+    Exception: If an error occurs during the data fetching, processing, or plotting steps, an error message is logged.
+    """
+
+    figure_size = (16, 9)
+
+    try:
+        output_files = {
+            f"sample_future_curves_basis_{product_contract_codes[0]}.png": product_contract_codes[0],
+            f"sample_future_curves_basis_{product_contract_codes[1]}.png": product_contract_codes[1]
+        }
+
+        for filename, contract_code in output_files.items():
+
+            info_df = fetch_wrds_contract_info(contract_code, time_period)
+            if info_df.empty:
+                return None
+            futcodes_contrdates = info_df.set_index("futcode")["contrdate"].to_dict()
+            data_contracts = fetch_wrds_fut_contract(futcodes_contrdates, time_period)
+            if data_contracts.empty:
+                return None
+            
+            monthly_df = futures_series_to_monthly(data_contracts)
+            first_through_12th_contracts_df = extract_first_through_12th_contracts(monthly_df)
+
+            fig, ax = plt.subplots(figsize=figure_size)
+
+
+            for idx, row in first_through_12th_contracts_df.iloc[30:40].iterrows():
+                basis_val = (np.log(row.values[-1]) - np.log(row.values[0])) / (len(row) - 1) * 100
+                x_vals = [(idx + i).to_timestamp() for i in range(len(row))] 
+                ax.plot(x_vals, row.values, marker='o', label=f"Obs. Month: {idx}; Basis: {basis_val:.2f}")
+
+            ax.legend(loc='upper right')
+            
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+            plt.xticks(rotation=45)
+
+            ax.set_title(f"Sample Future Curves Basis - {info_df['contrname'].iloc[0]}")
+            ax.set_xlabel("Observation Month", fontsize=14)
+            ax.set_ylabel("Settlement Price", fontsize=14)
+
+            output_file_path = OUTPUT_DIR / filename
+            fig.savefig(output_file_path, dpi=300, bbox_inches="tight")
+
+            logging.info(f"Sample futures curve figure saved successfully as {output_file_path}")
+
+    except Exception as e:
+        logging.error(f"An error occurred while generating the sample futures curve figure: {e}")
+
+
 if __name__ == "__main__":
     # Define expected output files
     output_files = {
@@ -817,7 +881,9 @@ if __name__ == "__main__":
         "paper_table1_replication_current.tex": paper_table1_replication_latex,
         "all_commodities_settlement.png": plot_all_commodities_settlement_time_series_png,
         "commodity_correlation_heatmap.png": plot_commodity_correlation_heatmap_pairwise_png,
-        "commodity_coverage_heatmap.png": plot_commodity_coverage_heatmap_png
+        "commodity_coverage_heatmap.png": plot_commodity_coverage_heatmap_png,
+        "sample_future_curves_basis_1986.png": plot_sample_future_curves_basis_png,
+        "sample_future_curves_basis_2060.png": plot_sample_future_curves_basis_png
     }
 
     for filename, func in output_files.items():
