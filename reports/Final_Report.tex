@@ -18,6 +18,7 @@
 \usepackage{siunitx} 
 \usepackage[a4paper, margin=1in]{geometry} 
 \usepackage{natbib} 
+\usepackage{placeins} 
 
 \begin{document}
 \title{
@@ -72,8 +73,8 @@ morbi tincidunt ornare massa eget.
 \begin{table}[ht!]
     \caption{Summary Stats}
     \centering
-    \renewcommand{\arraystretch}{1.2}  % Adjust row spacing
-    \setlength{\tabcolsep}{5pt}        % Reduce column spacing
+    \renewcommand{\arraystretch}{1.2}  
+    \setlength{\tabcolsep}{5pt}        
     \begin{adjustbox}{max width=\textwidth}
     \input{\PathToOutput/sector_settlement_summary.tex}
     \end{adjustbox}
@@ -134,28 +135,59 @@ congue quisque egestas diam.
 
 \newpage
 \section{Further Analysis}
-Eget duis at tellus at. Turpis egestas integer eget aliquet nibh praesent
-tristique magna. Egestas diam in arcu cursus euismod quis viverra nibh cras.
-Velit laoreet id donec ultrices tincidunt arcu non sodales. Urna duis
-convallis convallis tellus id. Ut pharetra sit amet aliquam. Adipiscing
-commodo elit at imperdiet dui accumsan sit. Arcu cursus euismod quis viverra
-nibh. 
+In this section, we present several visual explorations of the commodity dataset. We begin by illustrating 
+the coverage of monthly observations across products, noting any key gaps in the data. Next, we examine 
+how different commodities correlate with one another, shedding light on which products tend to move together 
+or diverge. Finally, we review long-term trends in monthly settlement prices, highlighting notable fluctuations and 
+patterns in specific commodities. 
 
 
 
 \begin{figure}[ht!]
-\centering
-\caption{Example plot}
   \centering
-  \includegraphics[width=0.75\linewidth]{\PathToOutput/commodity_correlation_heatmap.png}
-  % \caption{Average returns}
-\caption*{
-  Inflation and Real GDP...
-  }
-\label{fig:commodity_correlation_heatmap}
+  \caption{Example plot}
+  \begin{adjustbox}{max width=\textwidth}
+  \includegraphics[width=0.95\linewidth]{\PathToOutput/commodity_coverage_heatmap.png}
+  \end{adjustbox}
+  \caption*{Coverage heatmap for monthly observations across various commodities. 
+  Each row corresponds to a specific commodity (with its symbol), and each column 
+  indicates a monthly period. Dark squares signify the presence of data for that commodity-month 
+  combination, while light squares show missing data. Notably, there is no data for Broilers (BR) 
+  and a pronounced gap around 2009, illustrating non-uniform coverage across the dataset.}
+  \label{fig:commodity_coverage_heatmap}
 \end{figure}
 
+  
+\newpage
 
+
+\begin{figure}[ht!]
+  \centering
+  \caption{Example plot}
+  \begin{adjustbox}{max width=\textwidth}
+  \includegraphics[width=0.95\linewidth]{\PathToOutput/commodity_correlation_heatmap.png}
+  \end{adjustbox}
+  \caption*{Pairwise correlation matrix of monthly settlement prices for the included commodities. Commodities 
+  with insufficient data have been excluded to ensure reliable estimates. While most pairs exhibit moderate 
+  positive correlations, several (e.g., silver and natural gas versus butter) stand out with notably negative values.}
+\end{figure}
+
+\begin{figure}[ht!]
+  \centering
+  \caption{Example plot}
+  \begin{adjustbox}{max width=\textwidth}
+  \includegraphics[width=0.95\linewidth]{\PathToOutput/all_commodities_settlement.png}
+  \end{adjustbox}
+  \caption*{Time series of monthly settlement prices (1970–2025) for all included commodities. 
+  Certain products, such as aluminum, exhibit data gaps in WRDS coverage. Cocoa and aluminum 
+  stand out for their notably higher price fluctuations over this period, underscoring elevated 
+  volatility relative to other commodities.}
+  \label{fig:all_commodities_settlement}
+\end{figure}  
+
+\FloatBarrier
+
+\newpage
 Et tortor consequat id porta. Nam libero justo laoreet sit amet cursus sit. A
 iaculis at erat pellentesque adipiscing commodo elit. Pharetra vel turpis
 nunc eget. Turpis nunc eget lorem dolor sed viverra ipsum nunc aliquet. Quam

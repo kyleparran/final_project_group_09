@@ -252,10 +252,8 @@ def paper_table1_replication_latex():
 
 def plot_all_commodities_settlement_time_series_png(
     main_title="Monthly Settlement Prices by Commodity",
-    caption_text=(
-        "Illustrating each commodity's monthly settlement trend (1970-2025). Some commodities have\n"
-        "missing data in WRDS (e.g., aluminum). Cocoa and aluminum appear to be drivers of higher\n"
-        "deviation among settlement prices."
+    caption_text=(""
+        
     ),
     figure_size=(16, 9),
     legend_columns=1,
@@ -440,11 +438,8 @@ def plot_all_commodities_settlement_time_series_png(
 
 def plot_commodity_correlation_heatmap_pairwise_png(
     main_title="Commodity Correlation Heatmap (Settlement Prices)",
-    caption_text=(
-        "Pairwise correlation of monthly settlement prices for selected commodities.\n"
-        "We drop short-coverage or explicitly excluded commodities so the rest can show meaningful correlations.\n"
-        "As we can see, the majority of correlations are positive or minimal, but there are a few\n"
-        "commodities with noticeably negative correlations (e.g., silver & natural gas vs. butter)."
+    caption_text=(""
+        
     ),
     figure_size=(14, 12),
     annot=True,
@@ -625,12 +620,7 @@ def plot_commodity_correlation_heatmap_pairwise_png(
 
 def plot_commodity_coverage_heatmap_png(
     main_title="Coverage Heatmap: Monthly Data",
-    caption_text=(
-        "Each row is a commodity (with its symbol). Each column corresponds to one monthly period.\n"
-        "Dark squares represent coverage; light squares represent no data.\n"
-        "As we can see there is no data for Broilers and for some reason there is a split in \n"
-        "the data in 2009. Overall, we can see the misalignment of data and dates."
-    ),
+    caption_text=(""),
     figure_size=(26, 10),
     xtick_subsample=12,
     show_only_year=True,
