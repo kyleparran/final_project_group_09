@@ -115,7 +115,7 @@ def sector_settlement_summary_all_periods_latex(
     """
 
     try:
-        df_all = get_combined_futures_data()
+        df_all = load_combined_futures_data()
         if df_all.empty:
             logging.warning("No data found from WRDS or local file.")
             return
@@ -243,7 +243,7 @@ def plot_all_commodities_settlement_time_series_png(
     """
 
     try:
-        df_all = get_combined_futures_data()
+        df_all = load_combined_futures_data()
         if df_all.empty:
             logging.warning("No data found from WRDS or local file.")
             return
@@ -419,7 +419,7 @@ def plot_commodity_correlation_heatmap_pairwise_png(
         if exclude_codes is None:
             exclude_codes = set()
 
-        df_all = get_combined_futures_data()
+        df_all = load_combined_futures_data()
         if df_all.empty:
             logging.warning("No data found from WRDS or local file.")
             return
@@ -583,7 +583,7 @@ def plot_commodity_coverage_heatmap_png(
         # Adds broilers to show that it is missing
         CORRELATION_MAP[19] = "Broilers (BR)"
 
-        df_all = get_combined_futures_data()
+        df_all = load_combined_futures_data()
         if df_all.empty:
             logging.warning("No data found from WRDS or local file.")
             return

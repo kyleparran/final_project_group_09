@@ -93,7 +93,7 @@ def pull_all_futures_data(time_period="paper"):
         final_df = pd.DataFrame()  # empty if nothing found
     return final_df
 
-def get_combined_futures_data():
+def load_combined_futures_data():
     """
     Checks if a combined (paper + current) futures dataset already exists locally.
     If so, reads from that file to avoid repeated WRDS pulls.

@@ -120,7 +120,7 @@ def plot_all_commodities_settlement_time_series(
     align neatly with the main axis. 
     """
 
-    df_all = get_combined_futures_data()
+    df_all = load_combined_futures_data()
     if df_all.empty:
         print("No data found from WRDS or local file.")
         return
@@ -284,7 +284,7 @@ def sector_settlement_summary_all_periods(
     If no data is found, returns an HTML message.
     """
 
-    df_all = get_combined_futures_data()
+    df_all = load_combined_futures_data()
     if df_all.empty:
         return HTML("<p>No data found from WRDS or local file.</p>")
 
@@ -416,7 +416,7 @@ def plot_commodity_correlation_heatmap_pairwise(
     if exclude_codes is None:
         exclude_codes = set()
 
-    df_all = get_combined_futures_data()
+    df_all = load_combined_futures_data()
     if df_all.empty:
         print("No data found from WRDS or local file.")
         return
@@ -574,7 +574,7 @@ def plot_commodity_coverage_heatmap(
     # Adds broilers to show that it is missing
     CORRELATION_MAP[19] = "Broilers (BR)"
 
-    df_all = get_combined_futures_data()
+    df_all = load_combined_futures_data()
     if df_all.empty:
         print("No data found from WRDS or local file.")
         return

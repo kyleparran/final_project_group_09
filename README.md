@@ -1,9 +1,20 @@
-Example Project Using the ChartBook Template
+Project Overview
 =============================================
 
 ## About this project
+=============================================
+### Overview
+The primary goal of this project is to:
+- Pull futures contract data for multiple commodities from the WRDS database
+- Convert daily settlement prices into monthly observations
+- Identify front-month (nearest) and twelfth-month (latest) contracts to compute the basis
+- Calculate frequency of backwardation, excess returns, and Sharpe ratios
+- Compare results to Table 1 in Fan Yang’s paper, try to replicate
+as close as possible
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+### Pulling Data
+Our data is pulled directly from WRDS API and cleaned then stored in the _data directory. There are two sets of two types of datasets. "cleaned" and "final_table" data for both the paper, which is the range listed within Yang's Paper(1970/01/01 - 2008/12/31), and a "current" range, which is the date range after until 2025/02/28.
+
 
 ## Quick Start
 
@@ -41,7 +52,6 @@ Then, make sure to uncomment
 out the RMarkdown task from the `dodo.py` file. Then,
 run `doit` as before.
 
-### Other commands
 
 #### Unit Tests and Doc Tests
 
@@ -73,66 +83,41 @@ set_env.bat
 
 ### General Directory Structure
 
- - The `assets` folder is used for things like hand-drawn figures or other
-   pictures that were not generated from code. These things cannot be easily
-   recreated if they are deleted.
-
- - The `_output` folder, on the other hand, contains dataframes and figures that are
-   generated from code. The entire folder should be able to be deleted, because
-   the code can be run again, which would again generate all of the contents.
-
- - The `data_manual` is for data that cannot be easily recreated. This data
-   should be version controlled. Anything in the `_data` folder or in
-   the `_output` folder should be able to be recreated by running the code
-   and can safely be deleted.
-
- - I'm using the `doit` Python module as a task runner. It works like `make` and
-   the associated `Makefile`s. To rerun the code, install `doit`
-   (https://pydoit.org/) and execute the command `doit` from the `src`
-   directory. Note that doit is very flexible and can be used to run code
-   commands from the command prompt, thus making it suitable for projects that
-   use scripts written in multiple different programming languages.
-
- - I'm using the `.env` file as a container for absolute paths that are private
-   to each collaborator in the project. You can also use it for private
-   credentials, if needed. It should not be tracked in Git.
+- **_data/**: Stores cleaned data and the final table data, that has been pulled from WRDS (local CSV/Parquet files).
+- **assets/**: Contains a tex file of the replication of table 1
+- **notebooks/**: Contains two Jupyter notebooks(Project_Analysis & Project_Walkthrough) that both walk through
+the data cleaning process, as well as a deeper analysis on the table data and respective commodities.
+- **output_/**: Contains png, html, pdf, and tex files that are different formats of illustrative examples createed wtihin this notebook
+- **reports/**: Stores the Final_Report.tex file with the final analysis as well as the sources of the papers we reference.
+- **src/**: Houses all Python modules to fetch data, transform it, and run analyses.
+- **README.md**: Project documentation.
+- **dodo.py**: Conventionally recognized task-definition file used by the Python-based automation tool doit. When you run "doit" in a director. Each task within automates, pulls, cleans and outputs the data in the required format.
+Called by running "doit" within the terminal.
+- **env.example** gives the format of the env file the user will need to add with their credentials to correctly pull the data and run doit.
 
 ### Data and Output Storage
 
-I'll often use a separate folder for storing data. Any data in the data folder
-can be deleted and recreated by rerunning the PyDoit command (the pulls are in
-the dodo.py file). Any data that cannot be automatically recreated should be
-stored in the "data_manual" folder. Because of the risk of manually-created data
-getting changed or lost, I prefer to keep it under version control if I can.
-Thus, data in the "_data" folder is excluded from Git (see the .gitignore file),
-while the "data_manual" folder is tracked by Git.
+Data is pulled and stored in _data/, which is excluded from version control. Rerunning doit recreates it. Any manually created data is stored in data_manual/ and committed to Git to preserve changes. Generated outputs (e.g., dataframes, charts) live in _output/ and may be versioned if small enough. Paths to these folders and credentials are defined via environment variables (usually in .env) and loaded through settings.py, which all scripts access by importing config.
 
-Output is stored in the "_output" directory. This includes dataframes, charts, and
-rendered notebooks. When the output is small enough, I'll keep this under
-version control. I like this because I can keep track of how dataframes change as my
-analysis progresses, for example.
 
-Of course, the _data directory and _output directory can be kept elsewhere on the
-machine. To make this easy, I always include the ability to customize these
-locations by defining the path to these directories in environment variables,
-which I intend to be defined in the `.env` file, though they can also simply be
-defined on the command line or elsewhere. The `settings.py` is reponsible for
-loading these environment variables and doing some like preprocessing on them.
-The `settings.py` file is the entry point for all other scripts to these
-definitions. That is, all code that references these variables and others are
-loading by importing `config`.
-
-### Naming Conventions
-
- - **`pull_` vs `load_`**: Files or functions that pull data from an external
- data source are prepended with "pull_", as in "pull_fred.py". Functions that
- load data that has been cached in the "_data" folder are prepended with "load_".
- For example, inside of the `pull_CRSP_Compustat.py` file there is both a
- `pull_compustat` function and a `load_compustat` function. The first pulls from
- the web, whereas the other loads cached data from the "_data" directory.
-
+### Computational Definitions
+- Within the replication of the table you will see several different computations:
+  - Sector - The grouping of the commodities, a certain type of classification for where the comodity is generally grouped.
+  - Commodity - The product we are aiming to analyze. Could be any physical asset traded on the exchange. Examples are Gold, Oil, Corn etc..
+  - Symbol - The ticker for which the commodity is referenced.
+  - N - Number of valid monthly observations or data points used in the analysis
+  - Basis - The log price difference (front-month minus twelfth-month contract), scaled by months to maturity, expressed in percentage terms 
+  - Freq. of bw. - Frequency (as a percentage) of monthly observations where the front-month contract price exceeds the deferred (twelfth-month) contract price (i.e., backwardation)
+  - E[Re] - The mean annualized excess return of the commodity’s futures price over the sample period
+  - σ[Re] - Standard deviation of the commodity’s annualized excess returns 
+  - Sharpe ratio - Ratio of the commodity’s mean excess return to its standard deviation of returns, indicating risk-adjusted performance.
 
 ### Dependencies and Virtual Environments
+- Users need to have TeXlive or another similar alternative to create the .tex documents. The rest of the requirements should be covered by the quickstart by creating the environment and installing the requirements via
+```
+pip install -r requirements.txt
+```
+
 
 #### Working with `pip` requirements
 
