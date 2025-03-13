@@ -114,10 +114,23 @@ def plot_all_commodities_settlement_time_series(
     legend_columns=1
 ):
     """
-    Plots a multi-line time series of monthly settlement prices for all commodities
-    (labeled by user-friendly names). Each commodity gets a unique color+dash style.
-    The title, axes, and caption are placed using a bounding-box approach so they
-    align neatly with the main axis. 
+    Plots a multi-line time series of monthly settlement prices for all commodities.
+
+    Parameters
+    ----------
+    main_title : str, optional
+        Chart title.
+    caption_text : str, optional
+        Descriptive text placed below the chart.
+    figure_size : tuple of (int, int), optional
+        Size of the figure in inches (default is (16, 9)).
+    legend_columns : int, optional
+        Number of columns used in the legend (default is 1).
+
+    Returns
+    -------
+    None
+        Displays the plot inline if in a Jupyter environment.
     """
 
     df_all = load_combined_futures_data()
@@ -277,13 +290,22 @@ def sector_settlement_summary_all_periods(
     )
 ):
     """
-    Builds a styled HTML table of aggregated settlement stats by Sector, for the top_n
-    sorted by mean settlement. We prepend a truly centered title by placing both the
-    title and table within an inline-block container that auto-sizes to the table width.
+    Builds a styled HTML table of aggregated settlement stats by Sector.
 
-    If no data is found, returns an HTML message.
+    Parameters
+    ----------
+    top_n : int, optional
+        Number of rows to display, sorted by mean settlement (default is 5).
+    title : str, optional
+        Table title (default is "Combined Period Settlement Summary").
+    caption : str, optional
+        Text placed under the table (explanatory notes).
+
+    Returns
+    -------
+    IPython.display.HTML
+        A styled HTML table or a message if no data is available.
     """
-
     df_all = load_combined_futures_data()
     if df_all.empty:
         return HTML("<p>No data found from WRDS or local file.</p>")
@@ -409,8 +431,27 @@ def plot_commodity_correlation_heatmap_pairwise(
     exclude_codes=None
 ):
     """
-    Generates a correlation heatmap of settlement prices for the specified commodities,
-    excluding those with insufficient coverage or explicitly removed..
+    Generates a correlation heatmap of settlement prices for selected commodities.
+
+    Parameters
+    ----------
+    main_title : str, optional
+        Title for the heatmap.
+    caption_text : str, optional
+        Additional explanatory text.
+    figure_size : tuple of (int, int), optional
+        Size of the figure in inches (default is (14, 12)).
+    annot : bool, optional
+        Whether to display correlation values in each cell (default is True).
+    min_coverage : int, optional
+        Minimum monthly observations required for inclusion (default is 200).
+    exclude_codes : set of int, optional
+        Commodity codes to explicitly exclude from the plot.
+
+    Returns
+    -------
+    None
+        Displays the heatmap inline if in a Jupyter environment.
     """
 
     if exclude_codes is None:
@@ -566,11 +607,31 @@ def plot_commodity_coverage_heatmap(
     absence_color="#fafafa"
 ):
     """
-    Creates a "block-style" coverage heatmap for all commodities in CORRELATION_MAP,
-    ensuring each appears even if it has zero coverage. We manually place the title/axes
-    so they're centered over the plotted heatmap.
-    """
+    Creates a block-style coverage heatmap for all commodities,
+    showing months with/without data.
 
+    Parameters
+    ----------
+    main_title : str, optional
+        Title displayed above the heatmap.
+    caption_text : str, optional
+        Descriptive text placed below the chart.
+    figure_size : tuple of (int, int), optional
+        Size of the figure in inches (default is (26, 10)).
+    xtick_subsample : int, optional
+        Spacing for x-axis tick labels (default is 12).
+    show_only_year : bool, optional
+        If True, display only the year on x-axis ticks.
+    presence_color : str, optional
+        Color used for "has data" cells (default is "#003c80").
+    absence_color : str, optional
+        Color used for "no data" cells (default is "#fafafa").
+
+    Returns
+    -------
+    None
+        Displays the heatmap inline if in a Jupyter environment.
+    """
     # Adds broilers to show that it is missing
     CORRELATION_MAP[19] = "Broilers (BR)"
 

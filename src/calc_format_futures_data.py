@@ -38,11 +38,23 @@ sector_map = {
 
 
 def futures_series_to_monthly(df):
-    """  
+    """
     Convert a daily futures DataFrame into a monthly frequency by taking
     the last available daily row for each (futcode, month). Also parses
     contract periods and drops date columns to produce a final monthly dataset.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Must contain columns ['futcode', 'date_', 'contrdate', 'settlement'].
+
+    Returns
+    -------
+    pandas.DataFrame
+        Monthly data with columns ['futcode', 'contr_period', 'obs_period', 'settlement'].
+        Each row corresponds to the last daily entry in that month for the given futcode.
     """
+
     
     df = df.sort_values(["futcode", "date_"])
     monthly_df = df.groupby(["futcode", df["date_"].dt.to_period("M")]).tail(1).copy()
@@ -54,12 +66,24 @@ def futures_series_to_monthly(df):
     monthly_df = monthly_df.sort_values(by=["obs_period","contr_period"])
     return monthly_df
 
-# Parse the contrdate strings into a monthly Period (e.g. '03/03' -> 2003-03)
+# Parse the contrdate strings into a monthly Period 
 def parse_contrdate(c):
-    c = c.replace('/', '')  # handle both 'MMYY' & 'MM/YY'
+    """
+    Parse a contract date string (MMYY or MM/YY) into a monthly pandas.Period.
+
+    Parameters
+    ----------
+    c : str
+        Contract date in the format 'MMYY' or 'MM/YY'.
+
+    Returns
+    -------
+    pandas.Period
+        A monthly Period object corresponding to the parsed year and month.
+    """
+    c = c.replace('/', '') 
     mm = int(c[:2])
     yy = int(c[2:])
-    # crude century switch: assume YY<50 => 20xx, else 19xx
     year = (2000 + yy) if yy < 50 else (1900 + yy)
     return pd.Period(freq='M', year=year, month=mm)
 
@@ -67,13 +91,19 @@ def extract_first_through_12th_contracts(monthly_df):
     """
     Constructs a wide DataFrame of monthly settlement prices for the 1st through 12th contracts.
 
-    Given a DataFrame where each row represents a (futcode, obs_period, contr_period, settlement),
-    this function pivots the data so that for each observed monthly period (index),
-    it creates 12 columns: "1mth_settlement" up to "12mth_settlement."
-    Each column reflects the settlement price of that contract relative to the observation period.
+    For each obs_period in monthly_df, creates columns for 1mth_settlement up to 12mth_settlement,
+    indexing by the monthly observation period.
 
-    Specifically, for each obs_period = op, we look up the settlement for contr_period = (op + i),
-    where i ranges from 1 to 12. If the combination (op, op + i) is missing, a NaN is placed there.
+    Parameters
+    ----------
+    monthly_df : pandas.DataFrame
+        Must contain columns ['futcode', 'contr_period', 'obs_period', 'settlement'].
+
+    Returns
+    -------
+    pandas.DataFrame
+        Index = unique obs_period. Columns = ["1mth_settlement", "2mth_settlement", ..., "12mth_settlement"].
+        Each cell contains that month's settlement price if available, else NaN.
     """
 
     temp = monthly_df.set_index(["obs_period", "contr_period"])["settlement"]
@@ -92,7 +122,26 @@ def extract_first_through_12th_contracts(monthly_df):
 def compute_futures_stats(first_through_12th_contracts_df, monthly_df):
     """
     Compute basis, frequency of backwardation, and basic returns stats.
+
+    Parameters
+    ----------
+    first_through_12th_contracts_df : pandas.DataFrame
+        Wide DataFrame of monthly settlement prices with columns like "1mth_settlement" ... "12mth_settlement".
+    monthly_df : pandas.DataFrame
+        Monthly-level data used to compute excess returns.
+
+    Returns
+    -------
+    dict
+        Keys:
+            'N' : int (count of valid basis observations)
+            'mean_basis' : float
+            'freq_bw' : float (freq. of backwardation, in %)
+            'excess_return_mean' : float (annual excess return)
+            'excess_return_std' : float (std dev of annual excess return)
+            'sharpe_ratio' : float (risk-adjusted return measure)
     """
+
     basis_df = pd.DataFrame(index=first_through_12th_contracts_df.index)
     first_through_12th_contracts_df['T1'] = first_through_12th_contracts_df.apply(
         lambda row: next((i for i in range(1, 13) if not pd.isna(row[f"{i}mth_settlement"])), np.nan),
@@ -140,7 +189,24 @@ def compute_futures_stats(first_through_12th_contracts_df, monthly_df):
 def process_single_product(product_contract_code, time_period='paper'):
     """
     Compute stats for a single product code.
+
+    Pulls WRDS info for the given product, converts daily data to monthly,
+    extracts contract settlements, and calculates basis/backwardation statistics.
+
+    Parameters
+    ----------
+    product_contract_code : int
+        Commodity's contract code.
+    time_period : str, optional
+        'paper' (default) or 'current' date range.
+
+    Returns
+    -------
+    pandas.DataFrame or None
+        Single-row DataFrame of calculated stats (e.g., N, Basis, freq. BW, Sharpe).
+        Returns None if no valid data is found.
     """
+
     info_df = fetch_wrds_contract_info(product_contract_code, time_period)
     if info_df.empty:
         return None
@@ -210,8 +276,20 @@ format_dict = {
 
 
 def main_summary(time_period="paper"):
-    """A function for mapping and formatting the desired table results, as close as possible to 
-    the paper"""
+    """
+    A function for mapping and formatting the desired table results, as close as possible
+    to the paper.
+
+    Parameters
+    ----------
+    time_period : str, optional
+        'paper' (default) or 'current' for the date coverage.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Summary table for multiple commodities, containing stats like Basis, Freq. of bw., E[Re], σ[Re], Sharpe ratio.
+    """
     product_list = [
         3160, 289, 3161, 1980, 2038, 3247, 1992, 361, 385, 2036,
         379, 3256, 396, 430, 1986, 2091, 2029, 2060, 3847, 2032,
@@ -246,7 +324,20 @@ def main_summary(time_period="paper"):
     return summary_table
 
 def rename_for_display(df):
-    """Formatting the Index"""
+    """
+    Formatting the Index by replacing the commodity name with a user-friendly version
+    and adding a Symbol column.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame containing a 'Commodity' column.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Same data with 'Commodity' replaced where applicable and a new 'Symbol' column added.
+    """
     df = df.copy()
     df["Symbol"] = ""
     for i in df.index:
@@ -258,8 +349,22 @@ def rename_for_display(df):
     return df
 
 def final_table(df):
-    """ This is the final format to enable the closest replication in format to the display of the
-        Yang Paper. It changes the headers and allows for HTML formatting to mimic the design of table 1"""
+    """
+    This is the final format to enable the closest replication in format to the Yang Paper.
+
+    Renames columns, applies style formatting, and sorts by Sector and Commodity.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame with columns like 'Sector', 'Commodity', 'Basis', 'E[Re]', 'Sharpe ratio', etc.
+
+    Returns
+    -------
+    pandas.io.formats.style.Styler
+        A styled DataFrame ready for display or export to HTML.
+    """
+    
     df = df.rename(columns={
         "Freq. of bw.": "Freq. of<br>bw.",
         "Sharpe ratio": "Sharpe<br>ratio"

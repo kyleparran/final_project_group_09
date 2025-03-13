@@ -1,3 +1,5 @@
+""" This file holds all the functions with relation to pulling the data from WRDS"""
+
 import pandas as pd
 import numpy as np
 import wrds
@@ -27,7 +29,20 @@ CURRENT_END_DATE   = '2025-02-28'"""
 def fetch_wrds_contract_info(product_contract_code, time_period='paper'):
     """
     Fetch rows from wrds_contract_info.
+
+    Parameters
+    ----------
+    product_contract_code : int
+        The commodity's integer contract code (e.g., 3160).
+    time_period : str, optional
+        Either 'paper' (default) or 'current', indicating which date range to pull.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns include: futcode, contrcode, contrname, contrdate, startdate, lasttrddate.
     """
+
     if time_period == 'paper':
         start_date = PAPER_START_DATE
         end_date = PAPER_END_DATE
@@ -47,6 +62,18 @@ def fetch_wrds_contract_info(product_contract_code, time_period='paper'):
 def fetch_wrds_fut_contract(futcodes_contrdates, time_period='paper'):
     """
     Fetch daily settlement prices from wrds_fut_contract.
+
+    Parameters
+    ----------
+    futcodes_contrdates : dict
+        Keys are futcode values, and values are corresponding contract date strings.
+    time_period : str, optional
+        Either 'paper' (default) or 'current', indicating which date range to pull.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns include: futcode, date_, settlement, and a 'contrdate' column mapped from futcodes_contrdates.
     """
     if time_period == 'paper':
         start_date = PAPER_START_DATE
@@ -70,6 +97,16 @@ def pull_all_futures_data(time_period="paper"):
     """
     Pull raw data from WRDS for all product codes in product_list,
     then concatenate into one DataFrame.
+
+    Parameters
+    ----------
+    time_period : str, optional
+        Either 'paper' (default) or 'current' for the desired date range.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Combined daily settlements for all relevant product codes.
     """
     product_list = [
         3160, 289, 3161, 1980, 2038, 3247, 1992, 361, 385, 2036,
@@ -84,13 +121,12 @@ def pull_all_futures_data(time_period="paper"):
         futcodes_contrdates = info_df.set_index("futcode")["contrdate"].to_dict()
         data_contracts = fetch_wrds_fut_contract(futcodes_contrdates, time_period)
         if not data_contracts.empty:
-            # add product_code (optional, for reference)
             data_contracts["product_code"] = code
             all_frames.append(data_contracts)
     if len(all_frames) > 0:
         final_df = pd.concat(all_frames, ignore_index=True)
     else:
-        final_df = pd.DataFrame()  # empty if nothing found
+        final_df = pd.DataFrame()  
     return final_df
 
 def load_combined_futures_data():
@@ -98,6 +134,11 @@ def load_combined_futures_data():
     Checks if a combined (paper + current) futures dataset already exists locally.
     If so, reads from that file to avoid repeated WRDS pulls.
     If not, pulls from WRDS, saves to a local parquet file, and returns it.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame of daily settlement data spanning both 'paper' and 'current' periods.
     """
     if DATA_FILE.exists():
         df_all = pd.read_parquet(DATA_FILE)

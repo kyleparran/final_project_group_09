@@ -110,8 +110,22 @@ PRODUCT_NAME_MAP = {
 
 def sector_settlement_summary_all_periods_latex(
     top_n=5, output_table_name="sector_settlement_summary"):
+
     """
-    Converts aggregated sector settlement statistics into a LaTeX table and saves it as a .tex file.
+    Converts aggregated sector settlement statistics into a LaTeX table
+    and saves it as a .tex file.
+
+    Parameters
+    ----------
+    top_n : int, optional
+        Number of rows to display, sorted by mean settlement (default is 5).
+    output_table_name : str, optional
+        The base filename for the output LaTeX file (default is "sector_settlement_summary").
+
+    Returns
+    -------
+    None
+        Writes the LaTeX table to the specified .tex file.
     """
 
     try:
@@ -175,7 +189,17 @@ def sector_settlement_summary_all_periods_latex(
 
 def paper_table1_replication_latex():
     """
-    Generates LaTeX tables for the paper and current time period data and saves them as .tex files.
+    Generates LaTeX tables for the paper and current time period data and saves them
+    as .tex files.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+        Writes two .tex files, one for the paper period table and one for the current period table.
     """
     try:
         # Generate tables
@@ -240,6 +264,24 @@ def plot_all_commodities_settlement_time_series_png(
     """
     Plots a multi-line time series of monthly settlement prices for all commodities
     and saves the plot as a PNG file.
+
+    Parameters
+    ----------
+    main_title : str, optional
+        Chart title.
+    caption_text : str, optional
+        Descriptive text placed below the chart.
+    figure_size : tuple of (int, int), optional
+        Size of the figure in inches (default is (16, 9)).
+    legend_columns : int, optional
+        Number of columns used in the legend (default is 1).
+    output_file_name : str, optional
+        Filename for the saved plot.
+
+    Returns
+    -------
+    None
+        Saves the generated chart as a PNG image.
     """
 
     try:
@@ -411,8 +453,30 @@ def plot_commodity_correlation_heatmap_pairwise_png(
     output_file_name="commodity_correlation_heatmap.png"
 ):
     """
-    Generates a correlation heatmap of settlement prices for the specified commodities,
-    excluding those with insufficient coverage or explicitly removed, and saves it as a PNG file.
+    Generates a correlation heatmap of settlement prices for the specified commodities
+    and saves it as a PNG file.
+
+    Parameters
+    ----------
+    main_title : str, optional
+        Title for the heatmap.
+    caption_text : str, optional
+        Additional explanatory text.
+    figure_size : tuple of (int, int), optional
+        Size of the figure in inches (default is (14, 12)).
+    annot : bool, optional
+        Whether to display correlation values in each cell (default is True).
+    min_coverage : int, optional
+        Minimum monthly observations required (default is 200).
+    exclude_codes : set of int, optional
+        Commodity codes to exclude from correlation.
+    output_file_name : str, optional
+        Filename for the saved plot.
+
+    Returns
+    -------
+    None
+        Saves the generated heatmap as a PNG image.
     """
 
     try:
@@ -575,8 +639,31 @@ def plot_commodity_coverage_heatmap_png(
     output_file_name="commodity_coverage_heatmap.png"
 ):
     """
-    Creates a "block-style" coverage heatmap for all commodities in CORRELATION_MAP,
-    ensuring each appears even if it has zero coverage, and saves it as a PNG file.
+    Creates a coverage heatmap of monthly data for all commodities and saves it as a PNG file.
+
+    Parameters
+    ----------
+    main_title : str, optional
+        Title displayed above the heatmap.
+    caption_text : str, optional
+        Descriptive text placed below the chart.
+    figure_size : tuple of (int, int), optional
+        Size of the figure in inches (default is (26, 10)).
+    xtick_subsample : int, optional
+        Spacing for x-axis tick labels (default is 12).
+    show_only_year : bool, optional
+        If True, display only the year on x-axis ticks.
+    presence_color : str, optional
+        Color used for "has data" cells (default is "#003c80").
+    absence_color : str, optional
+        Color used for "no data" cells (default is "#fafafa").
+    output_file_name : str, optional
+        Filename for the saved plot.
+
+    Returns
+    -------
+    None
+        Saves the generated heatmap as a PNG image.
     """
 
     try:
@@ -746,6 +833,6 @@ if __name__ == "__main__":
         output_path = OUTPUT_DIR / filename
         if not output_path.exists():
             logging.info(f"Generating {filename}...")
-            func()  # Call the respective function
+            func()  
         else:
             logging.info(f"Skipping {filename}, already exists.")
