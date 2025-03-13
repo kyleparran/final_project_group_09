@@ -384,7 +384,7 @@ def plot_all_commodities_settlement_time_series_png(
             ha="center",
             va="bottom",
             fontname="Georgia",
-            fontsize=18,
+            fontsize=22,
             fontweight="bold"
         )
 
@@ -396,7 +396,7 @@ def plot_all_commodities_settlement_time_series_png(
             ha="center",
             va="top",
             fontname="Georgia",
-            fontsize=14
+            fontsize=18
         )
 
         # Y-axis label
@@ -410,7 +410,7 @@ def plot_all_commodities_settlement_time_series_png(
             va="center",
             rotation=90,
             fontname="Georgia",
-            fontsize=14,
+            fontsize=18,
             fontweight="normal"
         )
 
@@ -422,7 +422,7 @@ def plot_all_commodities_settlement_time_series_png(
             ha="center",
             va="top",
             fontname="Georgia",
-            fontsize=11
+            fontsize=18
         )
 
         # Save plot as PNG
@@ -568,7 +568,7 @@ def plot_commodity_correlation_heatmap_pairwise_png(
             ha="center",
             va="bottom",
             fontname="Georgia",
-            fontsize=16,
+            fontsize=20,
             fontweight="bold"
         )
 
@@ -580,7 +580,7 @@ def plot_commodity_correlation_heatmap_pairwise_png(
             ha="center",
             va="top",
             fontname="Georgia",
-            fontsize=13
+            fontsize=16
         )
 
         label_x = ax_bbox.x0 - 0.1
@@ -593,7 +593,7 @@ def plot_commodity_correlation_heatmap_pairwise_png(
             va="center",
             rotation=90,
             fontname="Georgia",
-            fontsize=13
+            fontsize=16
         )
 
         caption_y = x_label_y - 0.04
@@ -603,7 +603,7 @@ def plot_commodity_correlation_heatmap_pairwise_png(
             caption_text,
             ha="center",
             va="top",
-            fontsize=10,
+            fontsize=14,
             fontname="Georgia"
         )
 
@@ -759,7 +759,7 @@ def plot_commodity_coverage_heatmap_png(
             ha="center",
             va="bottom",
             fontname="Georgia",
-            fontsize=18,
+            fontsize=22,
             fontweight="bold"
         )
 
@@ -771,7 +771,7 @@ def plot_commodity_coverage_heatmap_png(
             ha="center",
             va="top",
             fontname="Georgia",
-            fontsize=16
+            fontsize=18
         )
 
         label_x = ax_bbox.x0 - 0.06
@@ -784,7 +784,7 @@ def plot_commodity_coverage_heatmap_png(
             va="center",
             rotation=90,
             fontname="Georgia",
-            fontsize=16
+            fontsize=18
         )
 
         caption_y = ax_bbox.y0 - 0.12
@@ -795,7 +795,7 @@ def plot_commodity_coverage_heatmap_png(
             ha="center",
             va="top",
             fontname="Georgia",
-            fontsize=14
+            fontsize=18
         )
 
         # Save plot as PNG

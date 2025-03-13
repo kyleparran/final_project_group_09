@@ -116,7 +116,10 @@ congue quisque egestas diam.
     \input{\PathToOutput/paper_table1_replication_paper.tex}
     \end{adjustbox}
     \caption*{
-      Table 1 replication etc etc...
+      Table 3 replicates the original analysis from Table 1 for the paper's time period, 
+      summarizing each commodity’s performance across agriculture, energy, livestock, and metals. 
+      Columns highlight sample size, basis, expected return, volatility, and Sharpe ratio, providing 
+      an overview of both prospective risk and return.
     }
     \label{table:paper_table1_replication_paper}
 \end{table}
@@ -128,7 +131,10 @@ congue quisque egestas diam.
   \input{\PathToOutput/paper_table1_replication_current.tex}
   \end{adjustbox}
   \caption*{
-    Table 1 replication etc etc...
+    Table 4 takes Table 3's approach and modifies the analyzed period to current, which would be from the end of the paper'S
+    analysis to 02-28-25. As seen, there are noticeable changes in almost all categories for all commodities. The Sample's Sharpe ratio
+    varies much more than in table 3 with ratios from 127 for Western barley and -137 for Coal. This highlights the effect of a smaller sample
+    as well as the inconsistency of the return/risk metrics.
   }
   \label{table:paper_table1_replication_current}
 \end{table}
@@ -145,7 +151,7 @@ patterns in specific commodities.
 
 \begin{figure}[ht!]
   \centering
-  \caption{Example plot}
+  \caption{Coverage Heatmap}
   \begin{adjustbox}{max width=\textwidth}
   \includegraphics[width=0.95\linewidth]{\PathToOutput/commodity_coverage_heatmap.png}
   \end{adjustbox}
@@ -157,13 +163,10 @@ patterns in specific commodities.
   \label{fig:commodity_coverage_heatmap}
 \end{figure}
 
-  
-\newpage
-
 
 \begin{figure}[ht!]
   \centering
-  \caption{Example plot}
+  \caption{Correlation Heatmap}
   \begin{adjustbox}{max width=\textwidth}
   \includegraphics[width=0.95\linewidth]{\PathToOutput/commodity_correlation_heatmap.png}
   \end{adjustbox}
@@ -172,9 +175,10 @@ patterns in specific commodities.
   positive correlations, several (e.g., silver and natural gas versus butter) stand out with notably negative values.}
 \end{figure}
 
+\clearpage
 \begin{figure}[ht!]
   \centering
-  \caption{Example plot}
+  \caption{Time-Series: Settlement Prices}
   \begin{adjustbox}{max width=\textwidth}
   \includegraphics[width=0.95\linewidth]{\PathToOutput/all_commodities_settlement.png}
   \end{adjustbox}
@@ -187,17 +191,15 @@ patterns in specific commodities.
 
 \FloatBarrier
 
-\newpage
-Et tortor consequat id porta. Nam libero justo laoreet sit amet cursus sit. A
-iaculis at erat pellentesque adipiscing commodo elit. Pharetra vel turpis
-nunc eget. Turpis nunc eget lorem dolor sed viverra ipsum nunc aliquet. Quam
-adipiscing vitae proin sagittis. Vitae suscipit tellus mauris a diam maecenas
-sed enim ut. Rutrum tellus pellentesque eu tincidunt. Pellentesque diam
-volutpat commodo sed. Erat velit scelerisque in dictum non. Consectetur lorem
-donec massa sapien faucibus et molestie. Suspendisse potenti nullam ac
-tortor. Amet massa vitae tortor condimentum lacinia quis. Et malesuada fames
-ac turpis egestas maecenas pharetra. Augue eget arcu dictum varius duis at
-consectetur lorem.
+In analyzing coverage patterns across a diverse set of commodities, we identified notable gaps 
+for certain products, as well as irregular coverage around specific periods like 2009. By examining 
+correlation heatmaps, we observed that most commodities tend to move in moderate unison, though a few pairs 
+exhibit distinctly negative relationships. The monthly settlement price data further highlighted that certain 
+markets have experienced significantly higher fluctuations over time. Overall, Yang's paper yields an interesting 
+strategy surrounding commodities, but without complete replication, and more in-depth knowledge of how he constructed
+this table, it is hard to validate his approach and findings. 
+
+\clearpage
 
 
 \bibliographystyle{jpe}
