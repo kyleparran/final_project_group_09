@@ -220,9 +220,10 @@ def paper_table1_replication_latex():
         for filename, df in output_files.items():
             output_path = OUTPUT_DIR / filename
 
+            
             # Format numbers before saving
             format_dict = {
-                "contrcode": "{:.0f}",
+                "Contract Code": "{:.0f}",
                 "N": "{:.0f}",
                 "Basis": "{:.2f}",
                 "Freq. of bw.": "{:.2f}",
@@ -621,7 +622,7 @@ def plot_commodity_correlation_heatmap_pairwise_png(
 def plot_commodity_coverage_heatmap_png(
     main_title="Coverage Heatmap: Monthly Data",
     caption_text=(""),
-    figure_size=(26, 10),
+    figure_size=(23, 10),
     xtick_subsample=12,
     show_only_year=True,
     presence_color="#003c80",
@@ -700,7 +701,7 @@ def plot_commodity_coverage_heatmap_png(
         cmap = ListedColormap([absence_color, presence_color])
 
         plt.rcParams["font.family"] = "Times New Roman"
-        plt.rcParams["font.size"] = 11
+        plt.rcParams["font.size"] = 13.5
 
         fig, ax = plt.subplots(figsize=figure_size)
 
@@ -774,7 +775,7 @@ def plot_commodity_coverage_heatmap_png(
             fontsize=18
         )
 
-        label_x = ax_bbox.x0 - 0.06
+        label_x = ax_bbox.x0 - 0.08
         label_y = 0.5 * (ax_bbox.y0 + ax_bbox.y1)
         fig.text(
             label_x,

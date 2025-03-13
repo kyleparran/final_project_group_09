@@ -44,13 +44,14 @@ This repository is automated end-to-end using py-doit, allowing users with WRDS 
 \textit{``Intermediary Asset Pricing: New Evidence from Many Asset Classes''} \cite{He2017}, which explores the role of financial intermediaries in asset pricing, is an oft-cited paper that covers a range of asset classes that we have explored in this course.
 Given the interests of us authors, we have chosen to replicate the results of \cite{Yang2013}, which focuses on the commodity asset class.
 The paper examines the effect of investment shocks on the commodity basis spread, which is the difference between the futures price and the spot price of a commodity.
-The visualization / data of focus in our work was Table 1 of \cite{Yang2013}, which presents the results of their analysis of basis spreads across many different commodities.
+The visualization / data of focus in our work was Table 1 of \cite{Yang2013} (seen below also as Table \ref{table:paper_table1_actual}), which presents the results of their analysis of basis spreads across many different commodities.
 
 \newpage
 
 \begin{table}[ht!]
   \input{\PathToAssets/paper_table1_actual.tex}
   \caption{Table 1 of \cite{Yang2013}}
+  \label{table:paper_table1_actual}
 \end{table}
 
 \newpage
@@ -58,17 +59,16 @@ The visualization / data of focus in our work was Table 1 of \cite{Yang2013}, wh
 \newpage
 \section{Methodology and Data Exploration}
 
-Vitae congue mauris rhoncus aenean. Turpis egestas pretium aenean pharetra.
-Non pulvinar neque laoreet suspendisse interdum consectetur libero id
-faucibus. Id porta nibh venenatis cras sed. Viverra tellus in hac habitasse
-platea. Sit amet facilisis magna etiam tempor orci eu lobortis elementum.
-Porttitor leo a diam sollicitudin. Imperdiet proin fermentum leo vel orci
-porta non. Maecenas pharetra convallis posuere morbi. Vel risus commodo
-viverra maecenas accumsan lacus vel facilisis volutpat. Faucibus vitae
-aliquet nec ullamcorper sit amet risus nullam. Sit amet venenatis urna cursus
-eget nunc scelerisque viverra mauris. A arcu cursus vitae congue. Ullamcorper
-morbi tincidunt ornare massa eget.
+We began our replication process by fetching the necessary data from the WRDS platform.
+The dataset within WRDS was sourced from LSEG Refinitiv (a brand produced by a recent merger).
+The specific data product was their Futures Datastream, referenced as \texttt{tr\_ds\_fut}.
+The tables we queried from \texttt{tr\_ds\_fut} were \texttt{wrds\_contract\_info} and \texttt{wrds\_fut\_contract}, the former of which contains information on the contracts themselves, and the latter of which contains the actual timeseries data for each contract.
 
+We took an iterative and manual approach to finding the appropriate futures for each commodity, as the data was not always labeled in a way that was immediately clear.
+We then pre-processed the data for each commodity by turning the daily data into monthly data (using the last observation of each month), and then for each monthly observation, collecting the settlement prices of the 1st through 12th month contracts at that point in time.
+In \cite{Yang2013}, the authors themselves struggled finding full datasets for their time period for all commodities.
+We encountered similar issues, with some commodities having less observations than expected, and some having more.
+A brief summary of the scale of the data queried (grouped by commodity sector) is shown in Table \ref{table:sector_settlement_summary}.
 
 \begin{table}[ht!]
     \caption{Summary Stats}
@@ -81,32 +81,35 @@ morbi tincidunt ornare massa eget.
     \label{table:sector_settlement_summary}
 \end{table}
 
-Basis calculation was done like this formula:
-
-\begin{equation}
-    B_{i,t} \;=\; \frac{\ln\bigl(F_{i,t,T_1}\bigr)\;-\;\ln\bigl(F_{i,t,T_2}\bigr)}{\,T_2 \;-\; T_1\,}
-  \label{eq:basis_formula}
-\end{equation}
-
-Excess return was done like this formula:
+Using this now monthly data, we calculated the relevant statistics for replication of Table \ref{table:paper_table1_actual}.
+First, we calculated excess return, which \cite{Yang2013} defines as "as the fully collateralized return of longing a futures contract."
+We used the same formula as used in \cite{Yang2013}. Equation \ref{eq:return_formula} represents the futures excess return of longing a futures contract (i) for one period (month).
 
 \begin{equation}
   R^e_{i,t+1,T} \;=\; \frac{F_{i,t+1,T}}{F_{i,t,T}} \;-\; 1
   \label{eq:return_formula}
 \end{equation}
 
+Next, we calculated the basis spread at each month interval for each commodity. The basis spread is defined as "the difference between its contemporaneous spot price and futures price with some maturity" \cite{Yang2013}.
+Basis essentially measures the slope of the futures curve for a commodity at each monthly interval.
+We calculate the monthly basis using the same datapoints as \cite{Yang2013}, which is the log difference between the one-month ($T_1$) and twelve-month ($T_2$) futures prices divided by the difference in maturity.
+As noted by the authors, and as we encountered in our data, not all commodities have futures contracts for all months.
+Thus, just as performed in \cite{Yang2013}, we used the nearest maturity contract available as $T_1$ and the furthest (up the 12 months) as $T_2$ to calculate the basis spread.
+The formula for this calculation is shown in Equation \ref{eq:basis_formula}.
+
+\begin{equation}
+    B_{i,t} \;=\; \frac{\ln\bigl(F_{i,t,T_1}\bigr)\;-\;\ln\bigl(F_{i,t,T_2}\bigr)}{\,T_2 \;-\; T_1\,}
+  \label{eq:basis_formula}
+\end{equation}
+
 
 \newpage
 \section{Replication Results}
 
-Dictum at tempor commodo ullamcorper a. Nunc eget lorem dolor sed
-viverra. Pellentesque pulvinar pellentesque habitant morbi tristique senectus
-et netus et. Feugiat pretium nibh ipsum consequat nisl vel. Magna fermentum
-iaculis eu non diam phasellus vestibulum. Et netus et malesuada fames ac
-turpis. Purus ut faucibus pulvinar elementum integer enim neque. Sem
-fringilla ut morbi tincidunt augue. Facilisi cras fermentum odio eu feugiat
-pretium nibh. Pellentesque nec nam aliquam sem et. Mi bibendum neque egestas
-congue quisque egestas diam.
+We present the replication results of Table 1 from \cite{Yang2013} in Tables \ref{table:paper_table1_replication_paper} and \ref{table:paper_table1_replication_current}.
+For both of these tables, we calculated the basis spread, expected return, volatility, and Sharpe ratio for each commodity.
+Further, Frequency of Backwardation is calculated as the percentage of months where the basis spread is negative.
+The sample size, N, is the number of months for which we have sufficient data to calculate basis for each commodity.
 
 
 \begin{table}[ht!]
@@ -115,14 +118,15 @@ congue quisque egestas diam.
     \begin{adjustbox}{max width=\textwidth}
     \input{\PathToOutput/paper_table1_replication_paper.tex}
     \end{adjustbox}
-    \caption*{
-      Table 3 replicates the original analysis from Table 1 for the paper's time period, 
+    \label{table:paper_table1_replication_paper}
+\end{table}
+
+Table \ref{table:paper_table1_replication_paper} replicates the original analysis from Table 1 for the paper's time period,
       summarizing each commodity’s performance across agriculture, energy, livestock, and metals. 
       Columns highlight sample size, basis, expected return, volatility, and Sharpe ratio, providing 
       an overview of both prospective risk and return.
-    }
-    \label{table:paper_table1_replication_paper}
-\end{table}
+
+\newpage
 
 \begin{table}[ht!]
   \caption{Table 1 Replication (Current Time Period)}
@@ -130,14 +134,18 @@ congue quisque egestas diam.
   \begin{adjustbox}{max width=\textwidth}
   \input{\PathToOutput/paper_table1_replication_current.tex}
   \end{adjustbox}
-  \caption*{
-    Table 4 takes Table 3's approach and modifies the analyzed period to current, which would be from the end of the paper'S
-    analysis to 02-28-25. As seen, there are noticeable changes in almost all categories for all commodities. The Sample's Sharpe ratio
-    varies much more than in table 3 with ratios from 127 for Western barley and -137 for Coal. This highlights the effect of a smaller sample
-    as well as the inconsistency of the return/risk metrics.
-  }
   \label{table:paper_table1_replication_current}
 \end{table}
+
+
+Table \ref{table:paper_table1_replication_current} takes Table \ref{table:paper_table1_replication_paper}'s approach and modifies the analyzed period to current, which would be from the end of the paper's
+      analysis to 02-28-25. As seen, there are noticeable changes in almost all categories for all commodities. The Sample's Sharpe ratio
+      varies much more than in table 3 with ratios from 127 for Western barley and -137 for Coal. This highlights the effect of a smaller sample
+      as well as the inconsistency of the return/risk metrics.
+      Notably, Table \ref{table:paper_table1_replication_current} has sufficient data for Propane, which was not the case for the paper's time period.
+      Vice versa, the current time period does not have data for unleaded gas, which was present in the paper's time period.
+      These inconsistencies in data availability across time are explored further later.
+
 
 \newpage
 \section{Further Analysis}
@@ -148,21 +156,25 @@ or diverge. Finally, we review long-term trends in monthly settlement prices, hi
 patterns in specific commodities. 
 
 
-
 \begin{figure}[ht!]
   \centering
   \caption{Coverage Heatmap}
   \begin{adjustbox}{max width=\textwidth}
-  \includegraphics[width=0.95\linewidth]{\PathToOutput/commodity_coverage_heatmap.png}
+  \includegraphics[width=1\linewidth]{\PathToOutput/commodity_coverage_heatmap.png}
   \end{adjustbox}
   \caption*{Coverage heatmap for monthly observations across various commodities. 
   Each row corresponds to a specific commodity (with its symbol), and each column 
   indicates a monthly period. Dark squares signify the presence of data for that commodity-month 
-  combination, while light squares show missing data. Notably, there is no data for Broilers (BR) 
-  and a pronounced gap around 2009, illustrating non-uniform coverage across the dataset.}
+  combination, while light squares show missing data. }
   \label{fig:commodity_coverage_heatmap}
 \end{figure}
 
+Figure \ref{fig:commodity_coverage_heatmap} shows the data coverage for each commodity; most apparent is that there is no data for Broilers (BR) across the entire time period.
+Thus, it is not included in our replication results in neither time period. It is unclear what commodity futures \cite{Yang2013} used for Broilers, given we could not find reference to any such existing and consistent contract in that time (irregardless of our dataset).
+As previously noted, it is also evident that unleaded gas is present in the paper time period, but not in the current time period.
+The opposite goes for propane.
+We do not perceive these inconsistencies as a sign of major fault in our approach, as, for reference, the previous year's project's attempt was missing data for not just propane and broilers, but also barley and butter.
+Also notable in the coverage heatmap is the irregular coverage around 2009, which is likely due to the financial crisis, commodity trading blow ups / scandals (a la Brain Hunter and Amaranth), and anticipation of incoming Dodd-Frank regulations.
 
 \begin{figure}[ht!]
   \centering
@@ -195,9 +207,10 @@ In analyzing coverage patterns across a diverse set of commodities, we identifie
 for certain products, as well as irregular coverage around specific periods like 2009. By examining 
 correlation heatmaps, we observed that most commodities tend to move in moderate unison, though a few pairs 
 exhibit distinctly negative relationships. The monthly settlement price data further highlighted that certain 
-markets have experienced significantly higher fluctuations over time. Overall, Yang's paper yields an interesting 
+markets have experienced significantly higher fluctuations over time. Overall, \cite{Yang2013} yields an interesting 
 strategy surrounding commodities, but without complete replication, and more in-depth knowledge of how he constructed
 this table, it is hard to validate his approach and findings. 
+
 
 \clearpage
 
